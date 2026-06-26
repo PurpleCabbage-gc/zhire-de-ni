@@ -18,16 +18,14 @@ const KnowPage = {
         container.innerHTML = `
             <div class="page">
                 <div class="greeting-section">
-                    <h1 class="section-title">今天辛苦啦，${settings.userName}！</h1>
+                    <h1 class="section-title">今天辛苦啦，${settings.userName}</h1>
                     <p class="section-subtitle">我们一起看看身体的变化吧</p>
                 </div>
 
                 <div class="card card-brand assessment-entry" onclick="KnowPage.startAssessment()">
-                    <div class="assessment-entry-content">
-                        <h2 style="font-size: 22px; margin-bottom: 8px;">3分钟，了解近期状态</h2>
-                        <p style="opacity: 0.9; margin-bottom: 16px;">15道小题，帮你梳理身体信号</p>
-                        <button class="btn" style="background: white; color: var(--brand-dark); font-weight: 700;">开始测评</button>
-                    </div>
+                    <h2>3分钟，了解近期状态</h2>
+                    <p>15道小题，帮你梳理身体信号</p>
+                    <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 44px; font-weight: 600;">开始测评</button>
                 </div>
 
                 <div class="ai-entry" onclick="KnowPage.showChat()">
@@ -41,7 +39,7 @@ const KnowPage = {
                     <span class="ai-entry-arrow">›</span>
                 </div>
 
-                <div class="section-title" style="margin-top: 24px; font-size: 20px;">我的安心卡</div>
+                <h3 style="margin-top: 28px; font-size: 15px; font-weight: 600; color: var(--ink-secondary); margin-bottom: 10px;">我的安心卡</h3>
                 <div class="bookmark-scroll">
                     ${bookmarks.map(b => `
                         <div class="bookmark-card">
@@ -126,39 +124,40 @@ const KnowPage = {
 
         let statusLabel, statusColor;
         if (ratio < 0.25) { statusLabel = '状态不错，继续保持'; statusColor = 'var(--brand)'; }
-        else if (ratio < 0.5) { statusLabel = '有些信号值得留意'; statusColor = '#f0d9a0'; }
-        else { statusLabel = '需要多照顾自己'; statusColor = 'var(--peach)'; }
+        else if (ratio < 0.5) { statusLabel = '有些信号值得留意'; statusColor = 'var(--accent-warm)'; }
+        else { statusLabel = '需要多照顾自己'; statusColor = 'var(--accent-warm)'; }
 
         AppData.saveAssessment({ answers, topConcerns, totalScore, statusLabel });
 
         const container = document.getElementById('page-container');
         container.innerHTML = `
-            <div class="page result-page" style="animation: bounceIn 0.4s ease">
-                <div class="result-status" style="background: ${statusColor}20; border: 2px solid ${statusColor}; border-radius: var(--radius-lg); padding: 20px; text-align: center; margin-bottom: 24px;">
-                    <span style="font-size: 24px; font-weight: 700; color: ${statusColor === 'var(--brand)' ? 'var(--brand-dark)' : statusColor}">今日状态：${statusLabel}</span>
+            <div class="page result-page" style="animation: cardIn var(--duration-slow) var(--ease-out)">
+                <div style="text-align: center; padding: 20px 0; margin-bottom: 20px;">
+                    <p style="font-size: var(--font-size-sm); color: var(--ink-muted); margin-bottom: 6px;">今日状态</p>
+                    <p style="font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.02em;">${statusLabel}</p>
                 </div>
 
-                <h3 style="margin-bottom: 12px;">近期主要关注点</h3>
+                <h3 style="margin-bottom: 10px; font-size: var(--font-size-sm); font-weight: 600; color: var(--ink-muted);">近期主要关注点</h3>
                 <div class="concern-tags">
                     ${topConcerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}
                 </div>
 
-                <h3 style="margin: 24px 0 12px;">今日可以尝试</h3>
+                <h3 style="margin: 20px 0 10px; font-size: var(--font-size-sm); font-weight: 600; color: var(--ink-muted);">今日可以尝试</h3>
                 <div class="suggestions-list">
-                    <div class="suggestion-item">🌿 今天可以试试睡前做5分钟腹式呼吸</div>
-                    <div class="suggestion-item">💧 给自己倒一杯温水，慢慢喝完</div>
-                    <div class="suggestion-item">🚶‍♀️ 下午找个时间散步10分钟</div>
+                    <div class="suggestion-item">今天可以试试睡前做5分钟腹式呼吸</div>
+                    <div class="suggestion-item">给自己倒一杯温水，慢慢喝完</div>
+                    <div class="suggestion-item">下午找个时间散步10分钟</div>
                 </div>
 
                 <div class="medical-reminder">
-                    <p>⚠️ 以上内容仅供参考，不能替代医生诊断。如不适持续或加重，建议及时咨询专业医生。</p>
+                    <p>以上内容仅供参考，不能替代医生诊断。如不适持续或加重，建议及时咨询专业医生。</p>
                 </div>
 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
                     <button class="btn btn-primary" style="flex:1" onclick="App.showToast('分享功能开发中')">生成亲友小卡</button>
                     <button class="btn btn-secondary" style="flex:1" onclick="KnowPage.showHistory()">查看完整报告</button>
                 </div>
-                <button class="btn btn-ghost" style="width: 100%; margin-top: 12px;" onclick="KnowPage.render()">返回首页</button>
+                <button class="btn btn-ghost" style="width: 100%; margin-top: 10px;" onclick="KnowPage.render()">返回首页</button>
             </div>
         `;
     },
