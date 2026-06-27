@@ -107,14 +107,14 @@ const MockData = {
     ],
 
     symptomQuestions: [
-        { id: 1, text: '潮热 / 盗汗', icon: '🌡️' },
-        { id: 2, text: '睡眠障碍', icon: '🌙' },
-        { id: 3, text: '情绪波动 / 焦虑', icon: '💭' },
-        { id: 4, text: '疲劳乏力', icon: '🍃' },
-        { id: 5, text: '关节肌肉痛', icon: '🦴' },
-        { id: 6, text: '记忆力变化', icon: '🧠' },
-        { id: 7, text: '性欲减退', icon: '💫' },
-        { id: 8, text: '尿频 / 漏尿', icon: '💧' }
+        { id: 1, text: '👋 您在夜里睡觉时，有没有因为身上突然燥热或大量出汗而热醒，需要掀被子或者换衣服？', icon: '🌡️', field: 'hotFlash' },
+        { id: 2, text: '🌙 最近一段时间，您入睡困难吗？或者半夜醒了之后就很难再睡着？', icon: '🌙', field: 'sleep' },
+        { id: 3, text: '💭 您有没有觉得最近比较容易烦躁、心情低落，或者情绪起起伏伏的？', icon: '💭', field: 'mood' },
+        { id: 4, text: '🍃 白天是不是经常觉得提不起精神、做什么都觉得累？', icon: '🍃', field: 'fatigue' },
+        { id: 5, text: '🦴 肩膀、膝盖、手指这些地方有没有隐隐的酸痛或僵硬感？', icon: '🦴', field: 'pain' },
+        { id: 6, text: '🧠 最近有没有容易忘事，或者觉得注意力不太容易集中？', icon: '🧠', field: 'memory' },
+        { id: 7, text: '💫 这段时间对亲密关系的兴致是不是比之前低了？', icon: '💫', field: 'libido' },
+        { id: 8, text: '💧 会不会出现咳嗽、打喷嚏或者大笑的时候，有点漏尿的情况？', icon: '💧', field: 'incontinence' }
     ],
 
     severityLevels: [

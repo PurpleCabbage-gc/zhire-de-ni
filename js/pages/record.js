@@ -75,7 +75,7 @@ const RecordPage = {
         const total = questions.length + 1;
 
         return `
-            <div class="symptom-card" style="animation: bounceIn 0.3s ease">
+            <div class="symptom-card" style="animation: cardIn 400ms var(--ease-out)">
                 <div class="symptom-progress">第 ${this.state.currentSymptom + 1} / ${total} 题</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${((this.state.currentSymptom + 1) / total) * 100}%"></div>
@@ -84,15 +84,18 @@ const RecordPage = {
                 <h3 class="symptom-title">${q.text}</h3>
                 <div class="severity-buttons">
                     ${MockData.severityLevels.map(s => `
-                        <button class="severity-btn" style="--btn-color: ${s.color}" onclick="RecordPage.selectSeverity(${s.value})">
+                        <button class="severity-btn" onclick="RecordPage.selectSeverity(${s.value})">
                             <span class="severity-dot" style="background: ${s.color}"></span>
                             <span>${s.label}</span>
                         </button>
                     `).join('')}
                 </div>
                 <div class="symptom-nav">
-                    ${this.state.currentSymptom > 0 ? `<button class="btn btn-ghost" onclick="RecordPage.prevSymptom()">上一题</button>` : '<span></span>'}
-                    <button class="btn btn-ghost" onclick="RecordPage.skipSymptom()">跳过</button>
+                    <button class="btn btn-voice" style="min-height:48px;font-size:14px;" onclick="App.showToast('语音输入功能开发中')">🎙️ 语音</button>
+                    <div style="display:flex;gap:8px;">
+                        ${this.state.currentSymptom > 0 ? `<button class="btn btn-ghost" onclick="RecordPage.prevSymptom()">上一题</button>` : ''}
+                        <button class="btn btn-ghost" onclick="RecordPage.skipSymptom()">跳过</button>
+                    </div>
                 </div>
             </div>
         `;
@@ -121,7 +124,7 @@ const RecordPage = {
 
     renderMoodPicker() {
         return `
-            <div class="mood-card" style="animation: bounceIn 0.3s ease">
+            <div class="mood-card" style="animation: cardIn 400ms var(--ease-out)">
                 <h3 class="symptom-title">今天的心情是？</h3>
                 <div class="mood-grid">
                     ${MockData.moods.map(m => `
@@ -146,7 +149,7 @@ const RecordPage = {
         const encouragement = MockData.encouragements[Math.floor(Math.random() * MockData.encouragements.length)];
         const container = document.getElementById('record-content');
         container.innerHTML = `
-            <div class="feedback-card" style="animation: bounceIn 0.4s ease">
+            <div class="feedback-card" style="animation: cardIn 600ms var(--ease-spring)">
                 <div class="feedback-icon">📝✨</div>
                 <h3 style="margin: 16px 0 8px;">记录完成！</h3>
                 <p class="feedback-text">${encouragement}</p>
@@ -178,7 +181,7 @@ const RecordPage = {
         const existing = journals[todayKey];
 
         return `
-            <div class="journal-page" style="animation: fadeIn 0.3s ease">
+            <div class="journal-page" style="animation: pageIn 300ms var(--ease-out)">
                 <div class="journal-book">
                     <div class="journal-date">${dateStr}</div>
                     <div class="journal-weather">

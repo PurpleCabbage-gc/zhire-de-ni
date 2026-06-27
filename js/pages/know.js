@@ -15,6 +15,7 @@ const KnowPage = {
         const settings = AppData.getSettings();
         const container = document.getElementById('page-container');
         const bookmarks = AppData.getBookmarks();
+        const recentBookmarks = bookmarks.slice(0, 3);
         container.innerHTML = `
             <div class="page">
                 <div class="greeting-section">
@@ -25,7 +26,7 @@ const KnowPage = {
                 <div class="card card-brand assessment-entry" onclick="KnowPage.startAssessment()">
                     <h2>3分钟，了解近期状态</h2>
                     <p>15道小题，帮你梳理身体信号</p>
-                    <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 44px; font-weight: 600;">开始测评</button>
+                    <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 44px; padding: 10px 20px; font-weight: 600; border-radius: 12px;">开始测评</button>
                 </div>
 
                 <div class="ai-entry" onclick="KnowPage.showChat()">
@@ -38,13 +39,39 @@ const KnowPage = {
                     <span>📋 历史测试结果</span>
                     <span class="ai-entry-arrow">›</span>
                 </div>
+                <p class="retest-hint">日常自测建议间隔至少3个月；已有症状者建议间隔2个月；绝经后期（停经满一年）建议6-12个月测一次。</p>
 
-                <h3 style="margin-top: 28px; font-size: 15px; font-weight: 600; color: var(--ink-secondary); margin-bottom: 10px;">我的安心卡</h3>
+                <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 28px;">
+                    <h3 style="font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">我的安心卡</h3>
+                    <span class="bookmark-view-all" onclick="KnowPage.showAllBookmarks()">查看全部 ›</span>
+                </div>
                 <div class="bookmark-scroll">
-                    ${bookmarks.map(b => `
+                    ${recentBookmarks.map(b => `
                         <div class="bookmark-card">
                             <h4>${b.title}</h4>
                             <p>${b.content}</p>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    },
+
+    showAllBookmarks() {
+        const bookmarks = AppData.getBookmarks();
+        const container = document.getElementById('page-container');
+        container.innerHTML = `
+            <div class="page">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="KnowPage.render()">← 返回</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">全部安心卡</span>
+                    <span></span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
+                    ${bookmarks.map(b => `
+                        <div class="bookmark-card" style="max-width: none; padding: 18px;">
+                            <h4 style="font-size: 16px;">${b.title}</h4>
+                            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-top: 6px;">${b.content}</p>
                         </div>
                     `).join('')}
                 </div>
@@ -74,7 +101,7 @@ const KnowPage = {
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
-                <div class="question-card" style="animation: bounceIn 0.3s ease">
+                <div class="question-card">
                     <p class="question-text">${q.text}</p>
                     <div class="options-list">
                         ${MockData.assessmentOptions.map(opt => `
@@ -122,27 +149,27 @@ const KnowPage = {
         const maxScore = answers.length * 3;
         const ratio = totalScore / maxScore;
 
-        let statusLabel, statusColor;
-        if (ratio < 0.25) { statusLabel = '状态不错，继续保持'; statusColor = 'var(--brand)'; }
-        else if (ratio < 0.5) { statusLabel = '有些信号值得留意'; statusColor = 'var(--accent-warm)'; }
-        else { statusLabel = '需要多照顾自己'; statusColor = 'var(--accent-warm)'; }
+        let statusLabel;
+        if (ratio < 0.25) statusLabel = '状态不错，继续保持';
+        else if (ratio < 0.5) statusLabel = '有些信号值得留意';
+        else statusLabel = '需要多照顾自己';
 
         AppData.saveAssessment({ answers, topConcerns, totalScore, statusLabel });
 
         const container = document.getElementById('page-container');
         container.innerHTML = `
-            <div class="page result-page" style="animation: cardIn var(--duration-slow) var(--ease-out)">
-                <div style="text-align: center; padding: 20px 0; margin-bottom: 20px;">
-                    <p style="font-size: var(--font-size-sm); color: var(--ink-muted); margin-bottom: 6px;">今日状态</p>
-                    <p style="font-size: var(--font-size-xl); font-weight: 700; letter-spacing: -0.02em;">${statusLabel}</p>
+            <div class="page result-page" style="animation: cardIn 400ms var(--ease-out)">
+                <div class="result-status">
+                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 6px;">今日状态</p>
+                    <p style="font-size: var(--font-h1); font-weight: 700; letter-spacing: -0.02em;">${statusLabel}</p>
                 </div>
 
-                <h3 style="margin-bottom: 10px; font-size: var(--font-size-sm); font-weight: 600; color: var(--ink-muted);">近期主要关注点</h3>
+                <h3 style="margin-bottom: 10px; font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">近期主要关注点</h3>
                 <div class="concern-tags">
                     ${topConcerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}
                 </div>
 
-                <h3 style="margin: 20px 0 10px; font-size: var(--font-size-sm); font-weight: 600; color: var(--ink-muted);">今日可以尝试</h3>
+                <h3 style="margin: 20px 0 10px; font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">今日可以尝试</h3>
                 <div class="suggestions-list">
                     <div class="suggestion-item">今天可以试试睡前做5分钟腹式呼吸</div>
                     <div class="suggestion-item">给自己倒一杯温水，慢慢喝完</div>
@@ -181,7 +208,7 @@ const KnowPage = {
             <div class="page chat-page">
                 <div class="chat-header">
                     <button class="btn-back" onclick="KnowPage.render()">← 返回</button>
-                    <span style="font-weight: 600; font-size: 18px;">问问暖知</span>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">问问暖知</span>
                     <span></span>
                 </div>
                 <div class="chat-messages" id="chatMessages">
@@ -194,16 +221,18 @@ const KnowPage = {
                 </div>
                 <div class="chat-input-area">
                     <input type="text" class="input-field chat-input" id="chatInput" placeholder="输入你的问题..." onkeypress="if(event.key==='Enter')KnowPage.sendMessage()">
+                    <button class="btn btn-voice" onclick="App.showToast('语音输入功能开发中')" title="语音输入">🎙️</button>
                     <button class="btn btn-primary chat-send" onclick="KnowPage.sendMessage()">发送</button>
                 </div>
             </div>
         `;
         const msgs = document.getElementById('chatMessages');
-        msgs.scrollTop = msgs.scrollHeight;
+        if (msgs) msgs.scrollTop = msgs.scrollHeight;
     },
 
     sendMessage() {
         const input = document.getElementById('chatInput');
+        if (!input) return;
         const text = input.value.trim();
         if (!text) return;
 
@@ -236,13 +265,13 @@ const KnowPage = {
                 <div class="page">
                     <div class="chat-header">
                         <button class="btn-back" onclick="KnowPage.render()">← 返回</button>
-                        <span style="font-weight: 600; font-size: 18px;">历史测试结果</span>
+                        <span style="font-weight: 600; font-size: var(--font-h2);">历史测试结果</span>
                         <span></span>
                     </div>
                     <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
                         <p style="font-size: 48px; margin-bottom: 16px;">📋</p>
                         <p>还没有测评记录</p>
-                        <p style="margin-top: 8px;">完成一次测评后，结果会显示在这里</p>
+                        <p style="margin-top: 8px; font-size: var(--font-caption);">完成一次测评后，结果会显示在这里</p>
                     </div>
                 </div>
             `;
@@ -253,9 +282,10 @@ const KnowPage = {
             <div class="page">
                 <div class="chat-header">
                     <button class="btn-back" onclick="KnowPage.render()">← 返回</button>
-                    <span style="font-weight: 600; font-size: 18px;">历史测试结果</span>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">历史测试结果</span>
                     <span></span>
                 </div>
+                <p class="retest-hint" style="margin-top: 8px; margin-bottom: 16px;">日常自测建议间隔至少3个月；已有症状者建议间隔2个月；绝经后期（停经满一年）建议6-12个月测一次。</p>
                 <div class="history-list">
                     ${history.map(h => {
                         const date = new Date(h.date);
@@ -264,7 +294,7 @@ const KnowPage = {
                             <div class="card" style="margin-bottom: 12px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="font-weight: 600;">${dateStr}</span>
-                                    <span style="font-size: 14px; color: var(--text-secondary);">${h.statusLabel}</span>
+                                    <span style="font-size: 13px; color: var(--text-secondary);">${h.statusLabel}</span>
                                 </div>
                                 <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
                                     ${h.topConcerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}

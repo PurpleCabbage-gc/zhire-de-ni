@@ -8,22 +8,21 @@ const SettingsPage = {
 
                 <div class="settings-section">
                     <h3 class="settings-section-title">适老化设置</h3>
-
-                    <div class="font-size-setting">
-                        <label class="toggle-label">字号调节</label>
-                        <div class="font-size-options">
-                            ${['small', 'standard', 'large', 'xlarge'].map(size => {
-                                const labels = { small: '小', standard: '标准', large: '大', xlarge: '超大' };
-                                return `<button class="font-size-btn ${settings.fontSize === size ? 'active' : ''}"
-                                    onclick="SettingsPage.setFontSize('${size}')">${labels[size]}</button>`;
-                            }).join('')}
-                        </div>
-                        <div class="font-preview" id="fontPreview">
-                            预览文字：身体在提醒你慢一点，我们一起理一理。
-                        </div>
+                    <div class="toggle-row">
+                        <span class="toggle-label">字号调节</span>
+                    </div>
+                    <div class="font-size-options">
+                        ${['small', 'standard', 'large', 'xlarge'].map(size => {
+                            const labels = { small: '小', standard: '标准', large: '大', xlarge: '超大' };
+                            return `<button class="font-size-btn ${settings.fontSize === size ? 'active' : ''}"
+                                onclick="SettingsPage.setFontSize('${size}')">${labels[size]}</button>`;
+                        }).join('')}
+                    </div>
+                    <div class="font-preview" id="fontPreview">
+                        预览文字：身体在提醒你慢一点，我们一起理一理。
                     </div>
 
-                    <div class="toggle-row">
+                    <div class="toggle-row" style="margin-top: 16px;">
                         <span class="toggle-label">大图标模式</span>
                         <div class="toggle-switch ${settings.largeIcons ? 'active' : ''}" onclick="SettingsPage.toggleSetting('largeIcons')"></div>
                     </div>
@@ -39,6 +38,7 @@ const SettingsPage = {
                         <span class="toggle-label">晚上记录提醒</span>
                         <div class="toggle-switch ${settings.reminderEvening ? 'active' : ''}" onclick="SettingsPage.toggleSetting('reminderEvening')"></div>
                     </div>
+                    <p class="settings-hint">提醒文案不会出现「必须记录」「你还没完成」等压力表达</p>
                 </div>
 
                 <div class="settings-section">
