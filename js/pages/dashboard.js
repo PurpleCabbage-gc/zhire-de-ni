@@ -30,7 +30,6 @@ const DashboardPage = {
                 </div>
             </div>
         `;
-        this.initCharts();
     },
 
     switchView(view) {
@@ -40,7 +39,9 @@ const DashboardPage = {
         document.querySelectorAll('.segment-btn').forEach((btn, i) => {
             btn.classList.toggle('active', (i === 0 && view === 'week') || (i === 1 && view === 'month'));
         });
-        this.initCharts();
+        if (this.state.statsOpen) {
+            setTimeout(() => this.initCharts(), 400);
+        }
     },
 
     getRecordsWithFallback() {
@@ -231,7 +232,7 @@ const DashboardPage = {
         if (drawer) {
             drawer.classList.toggle('open', this.state.statsOpen);
             if (this.state.statsOpen) {
-                setTimeout(() => this.initCharts(), 350);
+                setTimeout(() => this.initCharts(), 400);
             }
         }
     },
@@ -335,7 +336,7 @@ const DashboardPage = {
             const pastDays = Math.min(daysInMonth, now.getDate());
             for (let d = 1; d <= pastDays; d++) {
                 lineLabels.push((month + 1) + '/' + d);
-                lineData.push(Math.floor(Math.random() * 4) + 1);
+                lineData.push(((d * 7 + month * 31) % 4) + 1);
             }
         } else {
             // One datapoint per label
