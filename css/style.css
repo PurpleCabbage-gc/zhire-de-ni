@@ -719,6 +719,27 @@ body {
     border-color: var(--brand); background: #f0f7f1; color: var(--brand-deep); font-weight: 600;
 }
 .basic-option:hover { border-color: var(--brand); }
+
+/* loading dots animation */
+.loading-dots::after {
+    content: '';
+    animation: dots 1.5s steps(4, end) infinite;
+}
+@keyframes dots {
+    0%   { content: ''; }
+    25%  { content: '.'; }
+    50%  { content: '..'; }
+    75%  { content: '...'; }
+    100% { content: ''; }
+}
+
+/* history clickable card */
+.history-card-clickable {
+    transition: transform 150ms var(--ease-out), box-shadow 150ms var(--ease-out);
+}
+.history-card-clickable:active {
+    transform: scale(0.98);
+}
 .btn:disabled {
     opacity: 0.4; cursor: not-allowed; pointer-events: none;
 }
