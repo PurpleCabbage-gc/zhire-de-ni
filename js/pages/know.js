@@ -73,8 +73,8 @@ const KnowPage = {
                 <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 16px;">
                     ${bookmarks.map(b => `
                         <div class="bookmark-card" style="max-width: none; padding: 18px;">
-                            <h4 style="font-size: 16px;">${b.title}</h4>
-                            <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-top: 6px;">${b.content}</p>
+                            <h4 style="font-size: var(--font-body);">${b.title}</h4>
+                            <p style="font-size: var(--font-sm); color: var(--text-secondary); line-height: 1.6; margin-top: 6px;">${b.content}</p>
                         </div>
                     `).join('')}
                 </div>
@@ -301,7 +301,7 @@ const KnowPage = {
                 <div class="chat-header">
                     <button class="btn-back" onclick="KnowPage.render()">← 返回</button>
                     <span style="font-weight: 600; font-size: var(--font-h2);">问问暖知</span>
-                    <button class="btn btn-ghost" style="font-size: 13px; padding: 4px 10px;" onclick="KnowPage.showApiKeyInput()" title="设置API Key">⚙️</button>
+                    <button class="btn btn-ghost" style="font-size: var(--font-sm); padding: 4px 10px;" onclick="KnowPage.showApiKeyInput()" title="设置API Key">⚙️</button>
                 </div>
                 <div class="chat-messages" id="chatMessages">
                     ${this.state.chatMessages.map((m, idx) => `
@@ -356,7 +356,7 @@ const KnowPage = {
                     ${currentKey ? `<p style="font-size: var(--font-caption); color: var(--brand); margin-bottom: 12px;">已设置 Key：${masked}</p>` : `<p style="font-size: var(--font-caption); color: var(--alert); margin-bottom: 12px;">尚未设置 API Key</p>`}
                     <label style="font-size: var(--font-caption); color: var(--text-secondary); display: block; margin-bottom: 6px;">DeepSeek API Key：</label>
                     <input type="password" class="input-field" id="apiKeyInput" placeholder="sk-..." style="width: 100%; margin-bottom: 12px;" value="${currentKey}">
-                    <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">可在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color: var(--brand);">platform.deepseek.com</a> 获取 API Key</p>
+                    <p style="font-size: var(--font-xs); color: var(--text-muted); margin-bottom: 12px;">可在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color: var(--brand);">platform.deepseek.com</a> 获取 API Key</p>
                     <div style="display: flex; gap: 8px;">
                         <button class="btn btn-primary" style="flex: 1;" onclick="KnowPage.saveApiKey()">保存</button>
                         ${currentKey ? `<button class="btn btn-ghost" style="flex: 1; color: var(--alert);" onclick="KnowPage.removeApiKey()">清除 Key</button>` : ''}
@@ -449,12 +449,12 @@ const KnowPage = {
                         const color = severityColors[h.severity] || 'var(--brand)';
                         return '<div class="card history-card-clickable" style="margin-bottom: 12px; border-left: 4px solid ' + color + '; cursor: pointer;" onclick="KnowPage.viewReport(' + idx + ')">' +
                             '<div style="display: flex; justify-content: space-between; align-items: center;">' +
-                                '<div><span style="font-weight: 600;">' + dateStr + '</span><span style="font-size: 13px; color: var(--text-secondary); margin-left: 8px;">Kupperman 量表</span></div>' +
-                                '<span style="font-size: 13px; color: var(--brand);">查看完整报告 ›</span>' +
+                                '<div><span style="font-weight: 600;">' + dateStr + '</span><span style="font-size: var(--font-sm); color: var(--text-secondary); margin-left: 8px;">Kupperman 量表</span></div>' +
+                                '<span style="font-size: var(--font-sm); color: var(--brand);">查看完整报告 ›</span>' +
                             '</div>' +
                             '<div style="margin-top: 8px; display: flex; align-items: center; gap: 12px;">' +
                                 '<span style="font-size: 28px; font-weight: 700; color: ' + color + ';">' + h.totalScore + '</span>' +
-                                '<span style="font-size: 13px; color: var(--text-secondary);">/ 63分 · ' + h.severityLabel + '</span>' +
+                                '<span style="font-size: var(--font-sm); color: var(--text-secondary);">/ 63分 · ' + h.severityLabel + '</span>' +
                             '</div>' +
                         '</div>';
                     }).join('')}

@@ -30,6 +30,9 @@ const DashboardPage = {
                 </div>
             </div>
         `;
+        if (this.state.statsOpen) {
+            setTimeout(() => this.initCharts(), 400);
+        }
     },
 
     switchView(view) {
@@ -206,7 +209,7 @@ const DashboardPage = {
             <div class="stats-drawer ${this.state.statsOpen ? 'open' : ''}">
                 <div class="stats-handle" onclick="DashboardPage.toggleStats()">
                     <span class="stats-handle-bar"></span>
-                    <span style="font-size:13px;color:var(--text-muted);">${this.state.statsOpen ? '收起详细数据' : '展开详细数据'}</span>
+                    <span style="font-size:var(--font-sm);color:var(--text-muted);">${this.state.statsOpen ? '收起详细数据' : '展开详细数据'}</span>
                 </div>
                 <div class="stats-body">
                     <h3 class="dashboard-section-title">本月记录活跃度</h3>
@@ -574,7 +577,7 @@ const DashboardPage = {
                     <span class="share-step done">✓</span><span class="share-step-line done"></span>
                     <span class="share-step active">4</span>
                 </div>
-                <p style="font-size:14px;color:var(--text-secondary);margin: 12px 0;">根据你的选择生成的草稿，可以修改后再分享。</p>
+                <p style="font-size:var(--font-sm);color:var(--text-secondary);margin: 12px 0;">根据你的选择生成的草稿，可以修改后再分享。</p>
                 <div class="share-draft-box ${colorClass}">
                     <div class="share-draft-label">致 ${this.state.shareTarget}</div>
                     ${draft}
@@ -710,7 +713,7 @@ const DashboardPage = {
                     <button onclick="DashboardPage.closeImagePreview()" style="font-size:24px;background:none;border:none;cursor:pointer;width:44px;height:44px;padding:0;line-height:44px;color:var(--text-secondary);">✕</button>
                 </div>
                 <img src="${dataUrl}" style="width:100%;border-radius:12px;display:block;" alt="分享图片" />
-                <p style="font-size:14px;color:var(--text-secondary);margin:12px 0;text-align:center;">长按图片或点击下方按钮保存至相册</p>
+                <p style="font-size:var(--font-sm);color:var(--text-secondary);margin:12px 0;text-align:center;">长按图片或点击下方按钮保存至相册</p>
                 <button class="btn btn-primary" style="width:100%;min-height:56px;font-size:18px;" onclick="DashboardPage.downloadImage()">💾 保存图片</button>
             </div>
         `;

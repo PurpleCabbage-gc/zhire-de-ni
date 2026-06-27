@@ -92,7 +92,7 @@ const RecordPage = {
                     `).join('')}
                 </div>
                 <div class="symptom-nav">
-                    <button class="btn btn-voice" style="min-height:48px;font-size:14px;" onclick="RecordPage.showVoicePermission()">🎙️ 语音</button>
+                    <button class="btn btn-voice" style="min-height:48px;font-size:var(--font-sm);" onclick="RecordPage.showVoicePermission()">🎙️ 语音</button>
                     <div style="display:flex;gap:8px;">
                         ${this.state.currentSymptom > 0 ? `<button class="btn btn-ghost" onclick="RecordPage.prevSymptom()">上一题</button>` : ''}
                         <button class="btn btn-ghost" onclick="RecordPage.skipSymptom()">下一个</button>
@@ -172,7 +172,7 @@ const RecordPage = {
                 <h3 style="margin: 16px 0 8px;">记录完成！</h3>
                 <p class="feedback-text">${encouragement}</p>
                 <div class="feedback-suggestion">
-                    <p style="font-size: 15px; color: var(--text-secondary); margin-bottom: 8px;">暖知建议：</p>
+                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 8px;">暖知建议：</p>
                     <p>今天可以先从一个很小的照顾动作开始，比如给自己倒杯温水。</p>
                 </div>
                 <button class="btn btn-primary" style="width: 100%; margin-top: 20px;" onclick="RecordPage.renderMain()">好的</button>
@@ -213,7 +213,7 @@ const RecordPage = {
                     <label class="journal-label">我的积极行动记录</label>
                     <textarea class="journal-textarea input-field" id="journalText" rows="5" placeholder="写下今天做过的积极小事...">${existing ? existing.text : ''}</textarea>
                     <div class="quick-phrases">
-                        <p style="font-size: 14px; color: var(--text-secondary); margin-bottom: 8px;">快捷短语：</p>
+                        <p style="font-size: var(--font-sm); color: var(--text-secondary); margin-bottom: 8px;">快捷短语：</p>
                         <div class="phrase-list">
                             ${MockData.quickPhrases.map(p => `
                                 <button class="phrase-btn" onclick="RecordPage.addPhrase('${p}')">${p}</button>
