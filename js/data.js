@@ -1,4 +1,4 @@
-﻿const AppData = {
+const AppData = {
     getSettings() {
         const defaults = {
             fontSize: 'standard',
