@@ -18,8 +18,19 @@ const AppData = {
     },
 
     applyFontSize(size) {
-        const map = { small: '15px', standard: '18px', large: '20px', xlarge: '22px' };
-        document.documentElement.style.setProperty('--font-size-base', map[size] || '18px');
+        const map = {
+            small:  { body: '15px', caption: '13px', h2: '17px', h1: '21px', display: '25px' },
+            standard: { body: '18px', caption: '15px', h2: '20px', h1: '24px', display: '28px' },
+            large:  { body: '21px', caption: '17px', h2: '23px', h1: '27px', display: '31px' },
+            xlarge: { body: '24px', caption: '19px', h2: '26px', h1: '30px', display: '34px' }
+        };
+        const s = map[size] || map.standard;
+        const root = document.documentElement.style;
+        root.setProperty('--font-body', s.body);
+        root.setProperty('--font-caption', s.caption);
+        root.setProperty('--font-h2', s.h2);
+        root.setProperty('--font-h1', s.h1);
+        root.setProperty('--font-display', s.display);
     },
 
     getAssessmentHistory() {

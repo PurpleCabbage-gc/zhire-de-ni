@@ -216,10 +216,10 @@ const DashboardPage = {
                     <canvas id="chartPie" width="300" height="200" style="margin-top:12px;"></canvas>
                     <div class="line-symptom-selector">
                         ${['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'].map((s, i) =>
-                            '<button class="line-symptom-chip ' + (this.state.selectedLineSymptom === i ? 'active' : '') + '" onclick="DashboardPage.selectLineSymptom(' + i + ')">' + s + '</button>'
+                            '<button class="line-symptom-chip ' + (this.state.selectedLineSymptom === i ? 'active' : '') + '" data-sym-idx="' + i + '" onclick="DashboardPage.selectLineSymptom(' + i + ')">' + s + '</button>'
                         ).join('')}
                     </div>
-                    <canvas id="chartLine" width="300" height="180" style="margin-top:8px;"></canvas>
+                    <canvas id="chartLine" width="600" height="280" style="margin-top:8px;width:100%;"></canvas>
                 </div>
             </div>
         `;
@@ -238,6 +238,13 @@ const DashboardPage = {
 
     initCharts() {
         if (typeof Chart === 'undefined') return;
+
+        // Destroy existing charts first
+        ['chartPie','chartLine'].forEach(id => {
+            const c = Chart.getChart(id);
+            if (c) c.destroy();
+        });
+
         const records = this.getRecordsWithFallback();
         const now = new Date();
         const year = now.getFullYear();
@@ -284,7 +291,6 @@ const DashboardPage = {
 
             let lineLabels, lineData;
             if (dates.length === 0) {
-                // Build mock data: one point per day for the current month so far
                 lineLabels = [];
                 lineData = [];
                 const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -294,8 +300,15 @@ const DashboardPage = {
                     lineData.push(Math.floor(Math.random() * 4) + 1);
                 }
             } else {
+                // Ensure one data point per label
                 lineLabels = dates.map(dk => dk.slice(5));
-                lineData = dates.map(dk => trendData[dk][si] || 0);
+                lineData = dates.map(dk => trendData[dk][si] !== undefined ? trendData[dk][si] : 0);
+            }
+
+            // If only 1 data point, add a second to draw a visible line
+            if (lineLabels.length === 1) {
+                lineLabels = [lineLabels[0], ''];
+                lineData = [lineData[0], lineData[0]];
             }
 
             new Chart(lineEl, {
@@ -306,7 +319,7 @@ const DashboardPage = {
                         label: labels[si] + ' 严重程度',
                         data: lineData,
                         borderColor: lineColor[si],
-                        backgroundColor: lineColor[si].replace(')', ',0.12)').replace('rgb', 'rgba'),
+                        backgroundColor: lineColor[si] + '20',
                         fill: true,
                         tension: 0.3,
                         pointRadius: 3,
@@ -317,12 +330,10 @@ const DashboardPage = {
                     responsive: true,
                     maintainAspectRatio: true,
                     scales: {
-                        x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
-                        y: { min: 0, max: 4, ticks: { stepSize: 1 } }
+                        x: { ticks: { maxTicksLimit: 15, font: { size: 10 }, autoSkip: true } },
+                        y: { min: 0, max: 4, ticks: { stepSize: 1, font: { size: 11 } }, title: { display: true, text: '严重程度', font: { size: 10 } } }
                     },
-                    plugins: {
-                        legend: { display: false }
-                    }
+                    plugins: { legend: { display: false } }
                 }
             });
         }
@@ -330,12 +341,87 @@ const DashboardPage = {
 
     selectLineSymptom(index) {
         this.state.selectedLineSymptom = index;
-        // Destroy old chart instance
-        const oldChart = Chart.getChart('chartLine');
-        if (oldChart) oldChart.destroy();
-        // Toggle chip active
-        document.querySelectorAll('.line-symptom-chip').forEach((c, i) => c.classList.toggle('active', i === index));
-        this.initCharts();
+        document.querySelectorAll('.line-symptom-chip').forEach(c => {
+            c.classList.toggle('active', parseInt(c.dataset.symIdx) === index);
+        });
+        // Destroy only line chart, then rebuild both (pie is fine but destroy anyway for safety)
+        const c = Chart.getChart('chartLine');
+        if (c) c.destroy();
+        // Rebuild line chart only — don't re-init pie chart
+        this.buildLineChart();
+    },
+
+    buildLineChart() {
+        if (typeof Chart === 'undefined') return;
+        const lineEl = document.getElementById('chartLine');
+        if (!lineEl) return;
+
+        const records = this.getRecordsWithFallback();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const labels = ['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'];
+        const lineColor = ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB'];
+        const si = this.state.selectedLineSymptom || 0;
+
+        const trendData = {};
+        Object.entries(records).forEach(([dateKey, rec]) => {
+            const d = new Date(dateKey);
+            if (d.getFullYear() !== year || d.getMonth() !== month) return;
+            const symptoms = rec.symptoms || {};
+            const v = symptoms[si + 1];
+            if (v !== undefined && v > 0) {
+                trendData[dateKey] = v;
+            }
+        });
+        const dates = Object.keys(trendData).sort();
+
+        let lineLabels, lineData;
+        if (dates.length === 0) {
+            lineLabels = [];
+            lineData = [];
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const pastDays = Math.min(daysInMonth, now.getDate());
+            for (let d = 1; d <= pastDays; d++) {
+                lineLabels.push((month + 1) + '/' + d);
+                lineData.push(Math.floor(Math.random() * 4) + 1);
+            }
+        } else {
+            // One datapoint per label
+            lineLabels = dates.map(dk => dk.slice(5));
+            lineData = dates.map(dk => trendData[dk] !== undefined ? trendData[dk] : 0);
+        }
+
+        if (lineLabels.length === 1) {
+            lineLabels = [lineLabels[0], ''];
+            lineData = [lineData[0], lineData[0]];
+        }
+
+        new Chart(lineEl, {
+            type: 'line',
+            data: {
+                labels: lineLabels,
+                datasets: [{
+                    label: labels[si] + ' 严重程度',
+                    data: lineData,
+                    borderColor: lineColor[si],
+                    backgroundColor: lineColor[si] + '20',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: lineColor[si]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    x: { ticks: { maxTicksLimit: 15, font: { size: 10 }, autoSkip: true } },
+                    y: { min: 0, max: 4, ticks: { stepSize: 1, font: { size: 11 } }, title: { display: true, text: '严重程度', font: { size: 10 } } }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
     },
 
     renderReportSection() {
@@ -565,8 +651,8 @@ const DashboardPage = {
         if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
 
         const canvas = document.createElement('canvas');
-        canvas.width = 400;
-        canvas.height = 711;
+        canvas.width = 600;
+        canvas.height = 1067;
         const ctx = canvas.getContext('2d');
 
         let done = false;
@@ -586,37 +672,37 @@ const DashboardPage = {
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = '#333333';
-            ctx.font = 'bold 28px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.font = 'bold 36px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('炙热的你', canvas.width / 2, 70);
+            ctx.fillText('炙热的你', canvas.width / 2, 95);
 
             ctx.strokeStyle = '#A3C9A8';
             ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(canvas.width / 2 - 50, 90);
-            ctx.lineTo(canvas.width / 2 + 50, 90);
+            ctx.moveTo(canvas.width / 2 - 60, 120);
+            ctx.lineTo(canvas.width / 2 + 60, 120);
             ctx.stroke();
 
             ctx.fillStyle = '#333333';
-            ctx.font = '16px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.font = '20px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'left';
-            const lines = this.wrapText(ctx, text, canvas.width - 60);
-            let y = 120;
+            const lines = this.wrapText(ctx, text, canvas.width - 80);
+            let y = 165;
             lines.forEach(line => {
-                if (y < canvas.height - 120) {
-                    ctx.fillText(line, 30, y);
-                    y += line === '' ? 12 : 28;
+                if (y < canvas.height - 160) {
+                    ctx.fillText(line, 40, y);
+                    y += line === '' ? 16 : 36;
                 }
             });
 
             ctx.fillStyle = '#999999';
-            ctx.font = '13px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.font = '16px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('来自「炙热的你」App', canvas.width / 2, canvas.height - 50);
+            ctx.fillText('来自「炙热的你」App', canvas.width / 2, canvas.height - 60);
 
             if (btn) { btn.disabled = false; btn.textContent = '🖼️ 生成图片'; }
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
             this.showImagePreview(dataUrl);
         };
 
@@ -704,20 +790,60 @@ const DashboardPage = {
         const target = this.state.shareTarget;
         const content = this.state.shareContent;
         const tone = this.state.shareTone;
-        const templates = MockData.shareTemplates;
-        const toneKey = { '温和说明': 'gentle', '认真沟通': 'serious', '简短提醒': 'brief', '轻松一点': 'casual' }[tone] || 'gentle';
-        const targetKey = { '伴侣': 'partner', '子女': 'child', '朋友/姐妹': 'friend', '医生': 'doctor' }[target] || 'partner';
-        const symptoms = content.length > 0 ? content.join('、') : '身体不适';
-        const fn = templates[targetKey] && templates[targetKey][toneKey];
-        if (fn) return fn(symptoms, '16').replace(/\n/g, '<br>');
-        let text = '';
-        if (target === '伴侣') text = '亲爱的，最近我的身体有些变化，想跟你聊聊。';
-        else if (target === '子女') text = '孩子，妈妈最近身体有些变化，想让你了解一下。';
-        else if (target === '朋友/姐妹') text = '姐妹，最近身体在悄悄变化，想跟你分享～';
-        else if (target === '医生') text = '医生您好，以下是我近期关注的身体变化。';
-        else text = '你好，想跟你分享一下我最近的身体变化。';
-        if (content.length > 0) text += '\n\n主要想聊聊：' + content.join('、') + '。';
-        text += '\n\n这些都是更年期阶段正常的身体信号，有你的理解和支持，我会更好的。';
+
+        // Greeting per target
+        const greetings = {
+            '伴侣': { '温和说明': '亲爱的，最近我的身体正在经历一些变化，想慢慢跟你说。', '认真沟通': '我想认真地跟你聊聊我最近的身体状况，这对我挺重要的。', '简短提醒': '跟你说一声，最近身体有些小变化。', '轻松一点': '嘿～最近身体在跟我"闹脾气"呢，想跟你念叨念叨。' },
+            '子女': { '温和说明': '孩子，妈妈最近身体有些变化，想让你了解一下。', '认真沟通': '我想跟你认真地聊一聊妈妈最近的身体情况。', '简短提醒': '宝贝，妈妈身体最近有点变化，跟你说一下。', '轻松一点': '宝贝～妈妈身体像在"系统升级"，想跟你说说～' },
+            '朋友/姐妹': { '温和说明': '姐妹，最近身体在悄悄变化，想跟你分享。', '认真沟通': '作为朋友，我想让你了解我最近的一些身体变化。', '简短提醒': '姐妹，跟你说声，最近身体在经历一些变化。', '轻松一点': '姐妹们～我的身体最近像个"变频空调"！跟你聊聊～' },
+            '医生': { '温和说明': '医生您好，以下是我近期整理的身体变化记录，想请您帮忙看看。', '认真沟通': '医生您好，以下是我近期的症状记录摘要，希望您能帮我评估。', '简短提醒': '医生您好，近期关注到一些身体变化，请帮我看看。', '轻松一点': '医生您好～最近有些小状况，想咨询一下您的意见。' },
+            '其他': { '温和说明': '你好，想跟你分享一下我最近的身体变化。', '认真沟通': '你好，我想跟你说说我最近的一些身体情况。', '简短提醒': '跟你说一下，最近身体有些变化。', '轻松一点': '嗨～最近身体有些小变化，跟你说说～' }
+        };
+
+        // Content template per chip
+        const contentTemplates = {
+            '睡眠变化': { '温和说明': '最近睡眠不太踏实，有时入睡困难，有时半夜醒了就再难睡着。第二天精神也跟着受影响。', '认真沟通': '睡眠质量有明显变化：入睡时间变长，夜间易醒，整体睡眠深度下降。这可能与激素波动导致的体温调节紊乱有关。', '简短提醒': '最近睡眠不太好，有时会半夜醒来。', '轻松一点': '最近睡觉像开盲盒，有时一觉天亮，有时半夜就"开机"了～' },
+            '情绪变化': { '温和说明': '情绪有时会莫名低落或烦躁，不是故意要发脾气，而是身体在调整中。', '认真沟通': '情绪波动较频繁，容易出现焦虑、低落或易怒的状态。这是激素变化影响神经递质的正常反应，不是我变脆弱了。', '简短提醒': '最近情绪不太稳定，有时会莫名烦躁。', '轻松一点': '情绪像在坐过山车，忽高忽低，激素在开派對～' },
+            '身体不适': { '温和说明': '身体有时会突然发热出汗，或者关节隐隐酸痛，这些都是更年期常见的信号。', '认真沟通': '出现了潮热、盗汗、关节酸痛等身体症状，这些都是围绝经期雌激素水平下降导致的血管舒缩和骨骼关节反应。', '简短提醒': '身体有些不舒服，比如潮热、关节酸。', '轻松一点': '身体像个"变频空调"——忽冷忽热，关节还时不时刷存在感～' },
+            '希望得到的支持': {
+                '温和说明': '我需要的不是建议或"别想太多"，而是你的耐心和倾听。在我状态不好的时候，给我一点空间或一个拥抱就好。',
+                '认真沟通': '我需要你理解：这些变化不受我主观控制。我不是故意情绪不好，也不是想为难谁。我最需要的支持是——不急着给建议，先听完；不催我"快点好起来"，允许我有自己的节奏。',
+                '简短提醒': '我需要的不多：多一点耐心，少一点评价。',
+                '轻松一点': '帮我的方式超简单：一杯热茶 + 一句"辛苦了" + 别讲道理 = 满分！'
+            },
+            '只分享科普': { '温和说明': '更年期是每个女性都会经历的阶段，不是病，也不是"老了"。了解这些知识，能让我们更好地照顾自己。', '认真沟通': '围绝经期是女性从生育期过渡到老年期的正常生理阶段，我国女性平均绝经年龄约49.5岁。常见的潮热、失眠、情绪波动等症状，源于雌激素水平的波动和下降。', '简短提醒': '更年期是正常生理阶段，了解这些知识很重要。', '轻松一点': '更年期就像身体在做"系统大更新"——有点卡顿但最后会变好的！' },
+            '就医前症状整理': { '温和说明': '我把近期的症状整理了一下，方便医生了解我的情况。', '认真沟通': '以下是我近期的症状记录摘要，包括主要症状、出现频率和影响程度，供医生评估参考。', '简短提醒': '整理了近期症状，供医生参考。', '轻松一点': '把身体"小报告"整理好了，请医生帮我把把关～' }
+        };
+
+        // Closing per target and tone
+        const closings = {
+            '伴侣': { '温和说明': '谢谢你这段时间的包容。有你的理解，我相信我们会一起度过这个阶段。', '认真沟通': '我选择跟你说这些，是因为你是我最亲近的人。我们一起面对，会比一个人扛着好得多。', '简短提醒': '谢谢你一直在。不是你的问题。', '轻松一点': '爱你～谢谢你愿意听我说这些！' },
+            '子女': { '温和说明': '妈妈不需要你做什么特别的事，只要你知道这些变化是正常的，就够了。', '认真沟通': '我告诉你这些，是希望你知道妈妈不是"脾气不好"或"想太多"——这是一个自然的身体转折。你能做的最大支持就是理解和耐心。', '简短提醒': '不用担心，这是正常的。妈妈会照顾好自己。', '轻松一点': '所以如果哪天妈妈看起来怪怪的，帮我倒杯水就好～爱你！' },
+            '朋友/姐妹': { '温和说明': '谢谢你愿意听我说这些。这段时间如果有突然取消计划或回复慢，请多包涵。', '认真沟通': '谢谢你的陪伴和倾听。有时候知道有人在理解你，本身就是一种力量。', '简短提醒': '谢谢你！如果哪天突然放鸽子，请原谅我～', '轻松一点': '所以如果哪天我状态不对，给我一杯奶茶和一个拥抱就好～' },
+            '医生': { '温和说明': '谢谢您的耐心。希望能帮我评估一下目前的状态，看看是否需要进一步检查。', '认真沟通': '谢谢您的专业意见。请帮我评估目前的状态，是否需要进一步检查或治疗。', '简短提醒': '谢谢医生，请帮我评估一下。', '轻松一点': '谢谢医生！麻烦您帮我看看～' },
+            '其他': { '温和说明': '谢谢你的倾听。分享这些需要一点勇气，所以谢谢你愿意认真读完。', '认真沟通': '谢谢你愿意了解。更年期不应该是一个禁忌话题，越多人理解，我们就越不孤单。', '简短提醒': '谢谢你！', '轻松一点': '谢谢你愿意听完～比心！' }
+        };
+
+        const toneKey = tone || '温和说明';
+        const targetGreet = greetings[target] || greetings['其他'];
+        const targetClose = closings[target] || closings['其他'];
+        let text = targetGreet[toneKey] || targetGreet['温和说明'];
+
+        if (content.length > 0) {
+            text += '\n\n';
+            content.forEach((c, idx) => {
+                const tpl = contentTemplates[c];
+                if (tpl) {
+                    if (idx > 0) text += '\n';
+                    text += (tpl[toneKey] || tpl['温和说明']) + '\n';
+                }
+            });
+        } else {
+            // No content selected — generic body
+            text += '\n\n最近身体在经历一些变化，有时候不太舒服。这些都不是我能完全控制的，但我在努力记录和调整。';
+        }
+
+        text += '\n' + (targetClose[toneKey] || targetClose['温和说明']);
         return text.replace(/\n/g, '<br>');
     },
 

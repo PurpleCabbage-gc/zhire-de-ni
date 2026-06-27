@@ -317,13 +317,13 @@ body {
 .toast.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
 
 /* === 安心知道 === */
-.greeting-section { margin-bottom: 24px; padding-top: 8px; }
-.assessment-entry { cursor: pointer; padding: 24px; margin-bottom: 16px; }
+.greeting-section { margin-bottom: 16px; padding-top: 2px; }
+.assessment-entry { cursor: pointer; padding: 20px 24px; margin-bottom: 12px; }
 .assessment-entry h2 { font-size: var(--font-h1); font-weight: 700; margin-bottom: 6px; }
 .assessment-entry p { opacity: 0.85; font-size: var(--font-caption); }
 .retest-hint {
-    font-size: 13px; color: var(--text-muted); line-height: 1.6;
-    margin-left: 4px; display: inline;
+    font-size: 12px; color: var(--text-muted); line-height: 1.35;
+    margin: 6px 4px 0; display: block;
 }
 
 .ai-entry {
@@ -544,9 +544,9 @@ body {
 .journal-label { display: block; font-weight: 600; font-size: var(--font-caption); margin-bottom: 8px; }
 .journal-textarea {
     min-height: 100px; resize: vertical; font-family: inherit; line-height: 1.6;
-    background: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.8); width: calc(100% - 8px); margin-right: 8px;
 }
-.quick-phrases { margin-top: 14px; }
+.quick-phrases { margin-top: 14px; padding-right: 6px; }
 .phrase-list { display: flex; flex-wrap: wrap; gap: 6px; }
 .phrase-btn {
     padding: 7px 12px; border: 1px solid var(--border); border-radius: 16px;
@@ -672,7 +672,7 @@ body {
     overflow: hidden; transition: max-height 350ms var(--ease-out);
     max-height: 52px;
 }
-.stats-drawer.open { max-height: 800px; }
+.stats-drawer.open { max-height: 1400px; }
 .stats-handle {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     padding: 12px 20px 8px; cursor: pointer; user-select: none;
@@ -988,8 +988,8 @@ body {
 
 .card-brand.assessment-entry {
     position: relative;
-    min-height: 178px;
-    padding: 26px 24px;
+    min-height: 130px;
+    padding: 22px 24px;
     overflow: hidden;
     background:
         linear-gradient(145deg, #86B890 0%, #A3C9A8 58%, #B7D7BA 100%);
@@ -1006,17 +1006,17 @@ body {
 }
 
 .card-brand.assessment-entry::before {
-    right: -18px;
-    top: 20px;
-    width: 104px;
-    height: 52px;
+    right: -12px;
+    top: 16px;
+    width: 72px;
+    height: 36px;
 }
 
 .card-brand.assessment-entry::after {
-    right: 56px;
-    bottom: -20px;
-    width: 92px;
-    height: 46px;
+    right: 40px;
+    bottom: -14px;
+    width: 64px;
+    height: 32px;
 }
 
 .assessment-entry h2,
@@ -1028,7 +1028,8 @@ body {
 
 .assessment-entry h2 {
     max-width: 8.5em;
-    line-height: 1.35;
+    line-height: 1.25;
+    font-size: 22px;
 }
 
 .btn {
@@ -1214,6 +1215,7 @@ body {
 .journal-book {
     border-left: 0;
     border-radius: 10px 22px 22px 10px;
+    padding: 24px 26px 24px 32px;
     box-shadow: 9px 18px 34px rgba(74,60,48,0.12);
     background:
         repeating-linear-gradient(180deg, transparent 0, transparent 31px, rgba(163,201,168,0.09) 32px),
