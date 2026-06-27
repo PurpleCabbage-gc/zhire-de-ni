@@ -33,14 +33,13 @@ const KnowPage = {
                     <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 44px; padding: 10px 20px; font-weight: 600; border-radius: 12px;">开始测评</button>
                 </div>
 
-                <div class="ai-entry" onclick="KnowPage.showChat()">
-                    <div class="ai-entry-icon">🔍</div>
-                    <span>问问暖知</span>
-                    <span class="ai-entry-arrow">›</span>
+                <div style="display:flex;gap:10px;margin-top:12px;">
+                    <button class="btn btn-secondary" style="flex:1;" onclick="KnowPage.showHistory()">📋 历史测试结果</button>
                 </div>
 
-                <div class="history-link" onclick="KnowPage.showHistory()">
-                    <span>📋 历史测试结果</span>
+                <div class="ai-entry" onclick="KnowPage.showChat()" style="margin-top:16px;">
+                    <div class="ai-entry-icon">🔍</div>
+                    <span>问问暖知</span>
                     <span class="ai-entry-arrow">›</span>
                 </div>
                 <p class="retest-hint">${MockData.kuppermanIntro.retestNote}</p>
@@ -274,7 +273,7 @@ const KnowPage = {
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" style="flex:1" onclick="App.showToast('分享功能开发中')">生成亲友小卡</button>
+                    <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.showSharePage()">分享</button>
                     <button class="btn btn-secondary" style="flex:1" onclick="KnowPage.showHistory()">查看历史报告</button>
                 </div>
                 <button class="btn btn-ghost" style="width: 100%; margin-top: 10px;" onclick="KnowPage.render()">返回首页</button>
@@ -322,6 +321,7 @@ const KnowPage = {
                     ${this.state.chatLoading ? `<div class="chat-bubble ai"><div class="chat-avatar">🌿</div><div class="chat-content"><div class="chat-text" style="color: var(--text-secondary);">暖知正在查找知识库<span class="loading-dots">...</span></div></div></div>` : ''}
                 </div>
                 <div class="chat-input-area">
+                    <button class="btn btn-ghost" style="font-size:20px;min-width:44px;min-height:44px;padding:8px;" onclick="App.showToast('语音输入功能开发中')" title="语音输入">🎙️</button>
                     <input type="text" class="input-field chat-input" id="chatInput" placeholder="输入你的问题..." onkeypress="if(event.key==='Enter')KnowPage.sendMessage()" ${this.state.chatLoading ? 'disabled' : ''}>
                     <button class="btn btn-primary chat-send" onclick="KnowPage.sendMessage()" ${this.state.chatLoading ? 'disabled' : ''}>发送</button>
                 </div>
@@ -499,7 +499,10 @@ const KnowPage = {
                 </div>
                 <div class="card" style="padding: 20px; margin-bottom: 16px;">${reportBody}</div>
                 <div class="medical-reminder"><p>以上内容仅供参考，不能替代医生诊断。如不适持续或加重，建议及时咨询专业医生。</p></div>
-                <button class="btn btn-ghost" style="width: 100%; margin-top: 16px;" onclick="KnowPage.showHistory()">← 返回历史列表</button>
+                <div style="display:flex;gap:10px;margin-top:16px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.showSharePage()">分享</button>
+                    <button class="btn btn-ghost" style="flex:1" onclick="KnowPage.showHistory()">← 返回历史列表</button>
+                </div>
             </div>
         `;
     }

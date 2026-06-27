@@ -456,8 +456,7 @@ body {
     animation: cardIn 400ms var(--ease-out);
 }
 .card-sticky {
-    background: #FFF8E8; transform: rotate(-0.8deg);
-    border: none; position: relative; overflow: visible;
+    background: #FFF8E8; border: none; position: relative; overflow: visible;
 }
 .sticky-tape {
     position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
@@ -576,6 +575,10 @@ body {
 .petal-dot {
     width: 36px; height: 36px; border-radius: 50%;
     box-shadow: var(--shadow-card); transition: all 200ms;
+}
+.petal-shape {
+    border-radius: 50% 50% 50% 0;
+    transform: rotate(45deg);
 }
 .petal-item.selected .petal-dot {
     box-shadow: 0 0 0 3px var(--brand);

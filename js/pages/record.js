@@ -73,34 +73,23 @@ const RecordPage = {
 
         const q = questions[this.state.currentSymptom];
         const total = questions.length + 1;
-        const isBinary = this.state.currentSymptom >= 4;
-
-        const optionsHtml = isBinary ? `
-            <div class="binary-buttons">
-                <button class="binary-btn binary-yes" onclick="RecordPage.selectSeverity(3)">有</button>
-                <button class="binary-btn binary-no" onclick="RecordPage.selectSeverity(0)">无</button>
-            </div>
-        ` : `
-            <div class="severity-buttons">
-                ${MockData.severityLevels.map(s => `
-                    <button class="severity-btn" onclick="RecordPage.selectSeverity(${s.value})">
-                        <span class="severity-dot" style="background: ${s.color}"></span>
-                        <span>${s.label}</span>
-                    </button>
-                `).join('')}
-            </div>
-        `;
 
         return `
-            <div class="symptom-card card-sticky" style="animation: cardIn 400ms var(--ease-out)">
-                <div class="sticky-tape"></div>
+            <div class="symptom-card" style="animation: cardIn 400ms var(--ease-out)">
                 <div class="symptom-progress">【${this.state.currentSymptom + 1}/${total}】</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${((this.state.currentSymptom + 1) / total) * 100}%"></div>
                 </div>
                 <div class="symptom-icon">${q.icon}</div>
                 <h3 class="symptom-title">${q.text}</h3>
-                ${optionsHtml}
+                <div class="severity-buttons">
+                    ${MockData.severityLevels.map(s => `
+                        <button class="severity-btn" onclick="RecordPage.selectSeverity(${s.value})">
+                            <span class="severity-dot" style="background: ${s.color}"></span>
+                            <span>${s.label}</span>
+                        </button>
+                    `).join('')}
+                </div>
                 <div class="symptom-nav">
                     <button class="btn btn-voice" style="min-height:48px;font-size:14px;" onclick="RecordPage.showVoicePermission()">🎙️ 语音</button>
                     <div style="display:flex;gap:8px;">

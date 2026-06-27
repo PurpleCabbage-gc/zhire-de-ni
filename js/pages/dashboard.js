@@ -40,6 +40,14 @@ const DashboardPage = {
         this.initCharts();
     },
 
+    getRecordsWithFallback() {
+        const records = AppData.getAllRecords();
+        if (Object.keys(records).length === 0) {
+            return MockData.getMockMonthRecords();
+        }
+        return records;
+    },
+
     renderWeek() {
         const weekData = MockData.generateWeekData();
         const maxScore = 32;
@@ -53,7 +61,7 @@ const DashboardPage = {
                         if (ratio > 0.5) color = '#F4C2A1';
                         if (ratio > 0.75) color = '#e8a07a';
                         return '<div class="petal-item ' + (this.state.selectedDay === i ? 'selected' : '') + '" onclick="DashboardPage.showDayDetail(' + i + ')">' +
-                            '<div class="petal-dot" style="background: ' + color + '"></div>' +
+                            '<div class="petal-dot petal-shape" style="background: ' + color + '"></div>' +
                             '<span class="petal-label">周' + d.dayName + '</span></div>';
                     }).join('')}
                 </div>
@@ -88,11 +96,31 @@ const DashboardPage = {
                     if (val === undefined) return '';
                     const level = MockData.severityLevels[val];
                     return '<div class="detail-symptom-row"><span>' + q.icon + ' ' + q.field + '</span><span class="detail-severity" style="color: ' + level.color + '">' + level.label + '</span></div>';
-                }).join('') + '</div>';
+                }).join('') + '</div>' +
+                '<canvas id="dayChart" width="280" height="200" style="margin-top:12px;"></canvas>';
         } else {
             detailHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 24px;">这天还没有记录</p>';
         }
         this.openDrawer('<h3 style="margin-bottom: 16px;">' + day.date.slice(5) + ' 周' + day.dayName + '</h3>' + detailHTML);
+
+        if (day.record && typeof Chart !== 'undefined') {
+            setTimeout(() => {
+                const canvas = document.getElementById('dayChart');
+                if (!canvas) return;
+                const symptoms = day.record.symptoms || {};
+                const labels = ['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'];
+                const vals = [0,0,0,0,0,0,0,0];
+                for (let i = 0; i < 8; i++) vals[i] = symptoms[i + 1] || 0;
+                new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{ data: vals, backgroundColor: ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB'] }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } } }
+                });
+            }, 100);
+        }
     },
 
     openDrawer(contentHTML) {
@@ -121,7 +149,7 @@ const DashboardPage = {
         const month = today.getMonth();
         const daysInMonth = new Date(year, month + 1, 0).getDate();
         const firstDay = new Date(year, month, 1).getDay();
-        const records = AppData.getAllRecords();
+        const records = this.getRecordsWithFallback();
         const journals = AppData.getJournals();
 
         let recordDays = 0, journalDays = 0;
@@ -166,7 +194,7 @@ const DashboardPage = {
     },
 
     renderStatModules() {
-        const records = AppData.getAllRecords();
+        const records = this.getRecordsWithFallback();
         const journals = AppData.getJournals();
         const now = new Date();
         const year = now.getFullYear();
@@ -188,7 +216,7 @@ const DashboardPage = {
 
     initCharts() {
         if (typeof Chart === 'undefined') return;
-        const records = AppData.getAllRecords();
+        const records = this.getRecordsWithFallback();
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
@@ -211,30 +239,52 @@ const DashboardPage = {
         });
 
         const pieEl = document.getElementById('chartPie');
-        if (pieEl && counts.some(c => c > 0)) {
+        if (pieEl) {
+            const hasData = counts.some(c => c > 0);
             new Chart(pieEl, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
-                    datasets: [{ data: counts, backgroundColor: ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB'] }]
+                    datasets: [{
+                        data: hasData ? counts : Array.from({length:8}, () => Math.floor(Math.random()*8+1)),
+                        backgroundColor: ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB']
+                    }]
                 },
                 options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
             });
         }
 
         const lineEl = document.getElementById('chartLine');
-        const dates = Object.keys(trendData).sort();
-        if (lineEl && dates.length > 0) {
-            const topSymptom = counts.indexOf(Math.max(...counts));
-            const lineData = dates.map(dk => trendData[dk][topSymptom] || 0);
-            new Chart(lineEl, {
-                type: 'line',
-                data: {
-                    labels: dates.map(dk => dk.slice(5)),
-                    datasets: [{ label: labels[topSymptom] + ' 严重程度', data: lineData, borderColor: '#E76F51', backgroundColor: 'rgba(231,111,81,0.1)', fill: true, tension: 0.3 }]
-                },
-                options: { responsive: true, maintainAspectRatio: true, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }, plugins: { legend: { display: true, position: 'bottom' } } }
-            });
+        if (lineEl) {
+            const dates = Object.keys(trendData).sort();
+            if (dates.length === 0) {
+                const mlabels = [];
+                const mdata = [];
+                for (let i = 0; i < 14; i++) {
+                    const d = new Date(year, month, i + 1);
+                    mlabels.push((d.getMonth() + 1) + '/' + d.getDate());
+                    mdata.push(Math.floor(Math.random() * 4) + 1);
+                }
+                new Chart(lineEl, {
+                    type: 'line',
+                    data: {
+                        labels: mlabels,
+                        datasets: [{ label: '潮热 严重程度', data: mdata, borderColor: '#E76F51', backgroundColor: 'rgba(231,111,81,0.1)', fill: true, tension: 0.3 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }, plugins: { legend: { position: 'bottom' } } }
+                });
+            } else {
+                const topSymptom = counts.indexOf(Math.max(...counts));
+                const lineData = dates.map(dk => trendData[dk][topSymptom] || 0);
+                new Chart(lineEl, {
+                    type: 'line',
+                    data: {
+                        labels: dates.map(dk => dk.slice(5)),
+                        datasets: [{ label: labels[topSymptom] + ' 严重程度', data: lineData, borderColor: '#E76F51', backgroundColor: 'rgba(231,111,81,0.1)', fill: true, tension: 0.3 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }, plugins: { legend: { display: true, position: 'bottom' } } }
+                });
+            }
         }
     },
 
@@ -242,11 +292,10 @@ const DashboardPage = {
         return `
             <div class="report-section">
                 <h3>报告与分享</h3>
-                <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <div style="display: flex; gap: 10px;">
                     <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.showReportPage('week')">生成周度报告</button>
                     <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.showReportPage('month')">生成月度报告</button>
                 </div>
-                <button class="btn btn-primary" style="width:100%;" onclick="DashboardPage.showSharePage()">分享给亲友</button>
             </div>
         `;
     },
@@ -259,7 +308,7 @@ const DashboardPage = {
                 <div class="chat-header">
                     <button class="btn-back" onclick="DashboardPage.render()">← 返回</button>
                     <span style="font-weight: 600; font-size: var(--font-h2);">${label}报告</span>
-                    <button class="btn btn-ghost" style="font-size:13px;padding:4px 10px;" onclick="DashboardPage.showSharePage()">一键分享</button>
+                    <span></span>
                 </div>
                 <p style="font-size: var(--font-caption); color: var(--text-secondary); margin: 12px 0;">报告包含：趋势总结、主要困扰变化、正向事件回顾</p>
                 <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 20px; font-size: var(--font-caption); color: var(--text-secondary); line-height: 1.8;">
@@ -268,10 +317,9 @@ const DashboardPage = {
                     <p style="font-weight:600;color:var(--text-primary);">✨ 正向事件回顾</p>
                     <p>本${label === '周度' ? '周' : '月'}你坚持记录了身心感受，这是对自己的温柔关注。</p>
                 </div>
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.showSharePage()">分享报告</button>
-                    <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.render()">返回看板</button>
-                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 20px; min-height: 56px; font-size: var(--font-h2);" onclick="DashboardPage.showSharePage()">
+                    📤 分享报告
+                </button>
             </div>
         `;
     },
@@ -422,4 +470,3 @@ const DashboardPage = {
         }
     }
 };
-
