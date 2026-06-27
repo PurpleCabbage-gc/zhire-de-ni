@@ -34,8 +34,8 @@ const KnowPage = {
                 </div>
 
                 <div class="ai-entry" onclick="KnowPage.showChat()">
-                    <div class="ai-entry-icon">💬</div>
-                    <span>哪里不舒服？我帮你先理一理</span>
+                    <div class="ai-entry-icon">🔍</div>
+                    <span>问问暖知</span>
                     <span class="ai-entry-arrow">›</span>
                 </div>
 
@@ -150,8 +150,6 @@ const KnowPage = {
 
     selectAgeRange(id) {
         this.state.ageRange = id;
-        const ageLabels = {};
-        MockData.kuppermanAgeRanges.forEach(r => { ageLabels[r.id] = r.label; });
         this.renderBasicInfo();
     },
 
@@ -178,7 +176,7 @@ const KnowPage = {
             <div class="page assessment-page">
                 <div class="assessment-header">
                     <button class="btn-back" onclick="KnowPage.exitAssessment()">← 返回</button>
-                    <span class="assessment-progress-text">第 ${this.state.currentQuestion + 1} / ${total} 题</span>
+                    <span class="assessment-progress-text">【${this.state.currentQuestion + 1}/${total}】</span>
                 </div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${progress}%"></div>
@@ -238,12 +236,7 @@ const KnowPage = {
         const basicInfo = { ageRange: this.state.ageRange, menstrualStatus: this.state.menstrualStatus };
         const report = MockData.generateKuppermanReport(result, basicInfo);
 
-        const severityColors = {
-            normal: 'var(--brand)',
-            mild: '#F5D68A',
-            moderate: '#F4C2A1',
-            severe: '#E76F51'
-        };
+        const severityColors = { normal: 'var(--brand)', mild: '#F5D68A', moderate: '#F4C2A1', severe: '#E76F51' };
         const severityColor = severityColors[result.severity];
 
         AppData.saveAssessment({
@@ -304,7 +297,6 @@ const KnowPage = {
 
     renderChat() {
         const container = document.getElementById('page-container');
-        const hasKey = !!DeepSeekAPI.getApiKey();
         container.innerHTML = `
             <div class="page chat-page">
                 <div class="chat-header">
@@ -313,13 +305,21 @@ const KnowPage = {
                     <button class="btn btn-ghost" style="font-size: 13px; padding: 4px 10px;" onclick="KnowPage.showApiKeyInput()" title="设置API Key">⚙️</button>
                 </div>
                 <div class="chat-messages" id="chatMessages">
-                    ${this.state.chatMessages.map(m => `
+                    ${this.state.chatMessages.map((m, idx) => `
                         <div class="chat-bubble ${m.role}">
                             ${m.role === 'ai' ? '<div class="chat-avatar">🌿</div>' : ''}
-                            <div class="chat-text">${m.text.replace(/\n/g, '<br>')}</div>
+                            <div class="chat-content">
+                                <div class="chat-text">${m.text.replace(/\n/g, '<br>')}</div>
+                                ${m.role === 'ai' && idx > 0 ? `
+                                    <div class="chat-actions">
+                                        <button class="chat-action-btn" onclick="KnowPage.bookmarkAnswer(${idx})">⭐ 收藏</button>
+                                        <button class="chat-action-btn" onclick="App.showToast('语音播报功能开发中')">🔊 播报</button>
+                                    </div>
+                                ` : ''}
+                            </div>
                         </div>
                     `).join('')}
-                    ${this.state.chatLoading ? `<div class="chat-bubble ai"><div class="chat-avatar">🌿</div><div class="chat-text" style="color: var(--text-secondary);">暖知正在查找知识库<span class="loading-dots">...</span></div></div>` : ''}
+                    ${this.state.chatLoading ? `<div class="chat-bubble ai"><div class="chat-avatar">🌿</div><div class="chat-content"><div class="chat-text" style="color: var(--text-secondary);">暖知正在查找知识库<span class="loading-dots">...</span></div></div></div>` : ''}
                 </div>
                 <div class="chat-input-area">
                     <input type="text" class="input-field chat-input" id="chatInput" placeholder="输入你的问题..." onkeypress="if(event.key==='Enter')KnowPage.sendMessage()" ${this.state.chatLoading ? 'disabled' : ''}>
@@ -329,6 +329,15 @@ const KnowPage = {
         `;
         const msgs = document.getElementById('chatMessages');
         if (msgs) msgs.scrollTop = msgs.scrollHeight;
+    },
+
+    bookmarkAnswer(msgIdx) {
+        const msg = this.state.chatMessages[msgIdx];
+        if (!msg) return;
+        const title = msg.text.substring(0, 30).replace(/<br>/g, ' ') + '...';
+        const content = msg.text.replace(/<br>/g, '\n').replace(/\n\n⚠️.*$/, '').substring(0, 120);
+        AppData.saveBookmark({ title, content });
+        App.showToast('已收藏至安心卡 ⭐');
     },
 
     showApiKeyInput() {
@@ -344,7 +353,7 @@ const KnowPage = {
                 </div>
                 <div class="card" style="padding: 20px; margin-top: 16px;">
                     <p style="font-size: var(--font-body); line-height: 1.8; margin-bottom: 12px;">设置 DeepSeek API Key 后，暖知可以在知识库未覆盖的问题上，用 AI 为你生成温暖专业的回答。</p>
-                    ${currentKey ? `<p style="font-size: var(--font-caption); color: var(--brand); margin-bottom: 12px;">✓ 已设置 Key：${masked}</p>` : `<p style="font-size: var(--font-caption); color: var(--alert); margin-bottom: 12px;">⚠ 尚未设置 API Key</p>`}
+                    ${currentKey ? `<p style="font-size: var(--font-caption); color: var(--brand); margin-bottom: 12px;">已设置 Key：${masked}</p>` : `<p style="font-size: var(--font-caption); color: var(--alert); margin-bottom: 12px;">尚未设置 API Key</p>`}
                     <label style="font-size: var(--font-caption); color: var(--text-secondary); display: block; margin-bottom: 6px;">DeepSeek API Key：</label>
                     <input type="password" class="input-field" id="apiKeyInput" placeholder="sk-..." style="width: 100%; margin-bottom: 12px;" value="${currentKey}">
                     <p style="font-size: 12px; color: var(--text-muted); margin-bottom: 12px;">可在 <a href="https://platform.deepseek.com/api_keys" target="_blank" style="color: var(--brand);">platform.deepseek.com</a> 获取 API Key</p>
@@ -364,7 +373,7 @@ const KnowPage = {
             return;
         }
         DeepSeekAPI.setApiKey(input.value.trim());
-        App.showToast('API Key 已保存 ✓');
+        App.showToast('API Key 已保存');
         this.showChat();
     },
 
@@ -385,31 +394,15 @@ const KnowPage = {
         this.state.chatLoading = true;
         this.renderChat();
 
-        // Step 1: Search knowledge base first
         const kbMatch = KnowledgeBase.search(text);
 
         if (kbMatch) {
-            const answer = '【先安抚】我理解你的疑问，这是围绝经期女性最常关心的问题之一。让我帮你梳理一下。\n\n【专业解释】' + kbMatch.answer + '\n\n【需要留意】如果症状持续加重或严重影响日常生活，建议咨询专业医生，去医院看一看会更安心。\n\n⚠️ 以上内容参考权威专家共识，仅供参考，不能替代专业医疗诊断。';
+            const answer = '【知识库解答】\n\n' + kbMatch.answer + '\n\n如果症状持续加重或严重影响日常生活，建议咨询专业医生。\n\n⚠️ 以上内容参考权威专家共识，仅供参考，不能替代专业医疗诊断。';
             this.state.chatMessages.push({ role: 'ai', text: answer, source: 'knowledge_base' });
-            this.state.chatLoading = false;
-            this.renderChat();
-            return;
-        }
-
-        // Step 2: Try DeepSeek API if key is set
-        const apiKey = DeepSeekAPI.getApiKey();
-        if (apiKey) {
-            const result = await DeepSeekAPI.chat(text);
-            if (result.success) {
-                this.state.chatMessages.push({ role: 'ai', text: result.answer + '\n\n⚠️ 以上内容由AI生成，仅供参考，不能替代专业医疗诊断。', source: 'deepseek' });
-            } else {
-                this.state.chatMessages.push({ role: 'ai', text: '抱歉，AI 服务暂时不可用（' + result.message + '）。\n\n您可以先试试在知识库中有覆盖的问题，比如："围绝经期有什么症状"、"如何改善睡眠"、"补钙需要注意什么"等。\n\n⚠️ 以上内容仅供参考，不能替代专业医疗诊断。', source: 'fallback' });
-            }
         } else {
-            // No API key - give helpful fallback
             this.state.chatMessages.push({
                 role: 'ai',
-                text: '抱歉，这个问题在知识库中没有找到匹配的解答，而 AI 功能尚未配置。\n\n您可以：\n1. 点击右上角 ⚙️ 设置 DeepSeek API Key，开启 AI 智能问答\n2. 换一种方式描述您的问题，我来重新在知识库中查找\n3. 试试这些知识库已覆盖的话题：围绝经期症状、睡眠改善、饮食营养、运动建议、情绪管理、激素治疗等\n\n⚠️ 以上内容仅供参考，不能替代专业医疗诊断。',
+                text: '您的问题尚未录至知识库内，知识库将持续完善和更新。\n\n如需更多帮助，可以换个关键词试试，例如：潮热、失眠、情绪、运动、补钙等。',
                 source: 'fallback'
             });
         }
@@ -447,29 +440,23 @@ const KnowPage = {
                     <span style="font-weight: 600; font-size: var(--font-h2);">历史测试结果</span>
                     <span></span>
                 </div>
-                <p class="retest-hint" style="margin-top: 8px; margin-bottom: 16px;">${MockData.kuppermanIntro.retestNote}</p>
-                <p class="retest-hint" style="margin-top: 0; margin-bottom: 16px; color: var(--brand); font-weight: 600;">↓ 点击任意一条记录，查看完整报告</p>
+                <p class="retest-hint" style="margin-top: 8px; margin-bottom: 16px; color: var(--brand); font-weight: 600;">↓ 点击任意一条记录，查看完整报告</p>
                 <div class="history-list">
                     ${history.map((h, idx) => {
                         const date = new Date(h.date);
-                        const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}`;
+                        const dateStr = date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日';
                         const severityColors = { normal: '#A3C9A8', mild: '#F5D68A', moderate: '#F4C2A1', severe: '#E76F51' };
                         const color = severityColors[h.severity] || 'var(--brand)';
-                        return `
-                            <div class="card history-card-clickable" style="margin-bottom: 12px; border-left: 4px solid ${color}; cursor: pointer;" onclick="KnowPage.viewReport(${idx})">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <span style="font-weight: 600;">${dateStr}</span>
-                                        <span style="font-size: 13px; color: var(--text-secondary); margin-left: 8px;">Kupperman 量表</span>
-                                    </div>
-                                    <span style="font-size: 13px; color: var(--brand);">查看完整报告 ›</span>
-                                </div>
-                                <div style="margin-top: 8px; display: flex; align-items: center; gap: 12px;">
-                                    <span style="font-size: 28px; font-weight: 700; color: ${color};">${h.totalScore}</span>
-                                    <span style="font-size: 13px; color: var(--text-secondary);">/ 63分 · ${h.severityLabel}</span>
-                                </div>
-                            </div>
-                        `;
+                        return '<div class="card history-card-clickable" style="margin-bottom: 12px; border-left: 4px solid ' + color + '; cursor: pointer;" onclick="KnowPage.viewReport(' + idx + ')">' +
+                            '<div style="display: flex; justify-content: space-between; align-items: center;">' +
+                                '<div><span style="font-weight: 600;">' + dateStr + '</span><span style="font-size: 13px; color: var(--text-secondary); margin-left: 8px;">Kupperman 量表</span></div>' +
+                                '<span style="font-size: 13px; color: var(--brand);">查看完整报告 ›</span>' +
+                            '</div>' +
+                            '<div style="margin-top: 8px; display: flex; align-items: center; gap: 12px;">' +
+                                '<span style="font-size: 28px; font-weight: 700; color: ' + color + ';">' + h.totalScore + '</span>' +
+                                '<span style="font-size: 13px; color: var(--text-secondary);">/ 63分 · ' + h.severityLabel + '</span>' +
+                            '</div>' +
+                        '</div>';
                     }).join('')}
                 </div>
             </div>
@@ -479,15 +466,12 @@ const KnowPage = {
     viewReport(index) {
         const history = AppData.getAssessmentHistory();
         const h = history[index];
-        if (!h) {
-            App.showToast('报告数据不存在');
-            return;
-        }
+        if (!h) { App.showToast('报告数据不存在'); return; }
 
         const severityColors = { normal: '#A3C9A8', mild: '#F5D68A', moderate: '#F4C2A1', severe: '#E76F51' };
         const color = severityColors[h.severity] || 'var(--brand)';
         const date = new Date(h.date);
-        const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+        const dateStr = date.getFullYear() + '年' + (date.getMonth() + 1) + '月' + date.getDate() + '日 ' + date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0');
 
         let reportBody = h.reportHtml || '';
         if (!reportBody && h.answers) {
@@ -512,19 +496,12 @@ const KnowPage = {
                         <span style="font-size: var(--font-caption); color: var(--text-secondary);">/ 63 分</span>
                     </div>
                     <p style="font-size: var(--font-h2); font-weight: 700; margin-top: 4px;">${h.severityLabel}</p>
-                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-top: 4px;">总分范围0-63分 | 轻度15-20分 | 中度20-35分 | 重度>35分</p>
                 </div>
-
-                <div class="card" style="padding: 20px; margin-bottom: 16px;">
-                    ${reportBody}
-                </div>
-
-                <div class="medical-reminder">
-                    <p>以上内容仅供参考，不能替代医生诊断。如不适持续或加重，建议及时咨询专业医生。</p>
-                </div>
-
+                <div class="card" style="padding: 20px; margin-bottom: 16px;">${reportBody}</div>
+                <div class="medical-reminder"><p>以上内容仅供参考，不能替代医生诊断。如不适持续或加重，建议及时咨询专业医生。</p></div>
                 <button class="btn btn-ghost" style="width: 100%; margin-top: 16px;" onclick="KnowPage.showHistory()">← 返回历史列表</button>
             </div>
         `;
     }
 };
+

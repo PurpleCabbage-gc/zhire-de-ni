@@ -5,16 +5,22 @@ const App = {
         const settings = AppData.getSettings();
         AppData.applyFontSize(settings.fontSize);
 
-        const hasVisited = localStorage.getItem('zr_visited');
-        if (hasVisited) {
-            this.enterApp();
-        } else {
+        if (this.shouldShowSplash()) {
             SplashPage.render();
+        } else {
+            this.enterApp();
         }
     },
 
+    shouldShowSplash() {
+        const lastSplash = localStorage.getItem('zr_last_splash');
+        if (!lastSplash) return true;
+        const elapsed = Date.now() - parseInt(lastSplash, 10);
+        return elapsed > 24 * 60 * 60 * 1000;
+    },
+
     enterApp() {
-        localStorage.setItem('zr_visited', 'true');
+        localStorage.setItem('zr_last_splash', Date.now().toString());
         document.getElementById('bottom-nav').classList.remove('hidden');
         this.navigate('know');
     },

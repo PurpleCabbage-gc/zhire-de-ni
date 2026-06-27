@@ -73,29 +73,57 @@ const RecordPage = {
 
         const q = questions[this.state.currentSymptom];
         const total = questions.length + 1;
+        const isBinary = this.state.currentSymptom >= 4;
+
+        const optionsHtml = isBinary ? `
+            <div class="binary-buttons">
+                <button class="binary-btn binary-yes" onclick="RecordPage.selectSeverity(3)">有</button>
+                <button class="binary-btn binary-no" onclick="RecordPage.selectSeverity(0)">无</button>
+            </div>
+        ` : `
+            <div class="severity-buttons">
+                ${MockData.severityLevels.map(s => `
+                    <button class="severity-btn" onclick="RecordPage.selectSeverity(${s.value})">
+                        <span class="severity-dot" style="background: ${s.color}"></span>
+                        <span>${s.label}</span>
+                    </button>
+                `).join('')}
+            </div>
+        `;
 
         return `
-            <div class="symptom-card" style="animation: cardIn 400ms var(--ease-out)">
-                <div class="symptom-progress">第 ${this.state.currentSymptom + 1} / ${total} 题</div>
+            <div class="symptom-card card-sticky" style="animation: cardIn 400ms var(--ease-out)">
+                <div class="sticky-tape"></div>
+                <div class="symptom-progress">【${this.state.currentSymptom + 1}/${total}】</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${((this.state.currentSymptom + 1) / total) * 100}%"></div>
                 </div>
                 <div class="symptom-icon">${q.icon}</div>
                 <h3 class="symptom-title">${q.text}</h3>
-                <div class="severity-buttons">
-                    ${MockData.severityLevels.map(s => `
-                        <button class="severity-btn" onclick="RecordPage.selectSeverity(${s.value})">
-                            <span class="severity-dot" style="background: ${s.color}"></span>
-                            <span>${s.label}</span>
-                        </button>
-                    `).join('')}
-                </div>
+                ${optionsHtml}
                 <div class="symptom-nav">
-                    <button class="btn btn-voice" style="min-height:48px;font-size:14px;" onclick="App.showToast('语音输入功能开发中')">🎙️ 语音</button>
+                    <button class="btn btn-voice" style="min-height:48px;font-size:14px;" onclick="RecordPage.showVoicePermission()">🎙️ 语音</button>
                     <div style="display:flex;gap:8px;">
                         ${this.state.currentSymptom > 0 ? `<button class="btn btn-ghost" onclick="RecordPage.prevSymptom()">上一题</button>` : ''}
-                        <button class="btn btn-ghost" onclick="RecordPage.skipSymptom()">跳过</button>
+                        <button class="btn btn-ghost" onclick="RecordPage.skipSymptom()">下一个</button>
                     </div>
+                </div>
+            </div>
+        `;
+    },
+
+    showVoicePermission() {
+        const container = document.getElementById('record-content');
+        container.innerHTML = `
+            <div class="card" style="padding: 24px; text-align: center; animation: cardIn 300ms var(--ease-out)">
+                <p style="font-size: 36px; margin-bottom: 12px;">🎙️</p>
+                <h3 style="margin-bottom: 8px;">需要使用麦克风</h3>
+                <p style="font-size: var(--font-caption); color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+                    为了使用语音输入功能，需要获取您的麦克风权限。<br>录音内容仅用于本地文字转换，不会上传至任何服务器。
+                </p>
+                <div style="display: flex; gap: 12px;">
+                    <button class="btn btn-ghost" style="flex:1;" onclick="document.getElementById('record-content').innerHTML = RecordPage.renderSymptomCard()">不了，谢谢</button>
+                    <button class="btn btn-primary" style="flex:1;" onclick="App.showToast('语音输入功能开发中'); document.getElementById('record-content').innerHTML = RecordPage.renderSymptomCard();">允许</button>
                 </div>
             </div>
         `;
@@ -107,7 +135,7 @@ const RecordPage = {
         setTimeout(() => {
             this.state.currentSymptom++;
             document.getElementById('record-content').innerHTML = this.renderSymptomCard();
-        }, 300);
+        }, 1000);
     },
 
     prevSymptom() {
@@ -150,7 +178,7 @@ const RecordPage = {
         const container = document.getElementById('record-content');
         container.innerHTML = `
             <div class="feedback-card" style="animation: cardIn 600ms var(--ease-spring)">
-                <div class="feedback-icon">📝✨</div>
+                <div class="feedback-icon">📝</div>
                 <h3 style="margin: 16px 0 8px;">记录完成！</h3>
                 <p class="feedback-text">${encouragement}</p>
                 <div class="feedback-suggestion">
@@ -175,7 +203,7 @@ const RecordPage = {
 
     renderJournal() {
         const today = new Date();
-        const dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+        const dateStr = today.getFullYear() + '年' + (today.getMonth() + 1) + '月' + today.getDate() + '日';
         const journals = AppData.getJournals();
         const todayKey = today.toISOString().slice(0, 10);
         const existing = journals[todayKey];
@@ -183,6 +211,7 @@ const RecordPage = {
         return `
             <div class="journal-page" style="animation: pageIn 300ms var(--ease-out)">
                 <div class="journal-book">
+                    <div class="journal-spine"></div>
                     <div class="journal-date">${dateStr}</div>
                     <div class="journal-weather">
                         <span>天气：</span>
@@ -202,7 +231,7 @@ const RecordPage = {
                         </div>
                     </div>
                     <div style="display: flex; gap: 12px; margin-top: 20px;">
-                        <button class="btn btn-ghost" style="flex: 1;" onclick="App.showToast('语音输入功能开发中')">🎙️ 语音输入</button>
+                        <button class="btn btn-ghost" style="flex: 1;" onclick="RecordPage.showVoicePermission()">🎙️ 语音输入</button>
                         <button class="btn btn-primary" style="flex: 1;" onclick="RecordPage.saveJournal()">保存日志</button>
                     </div>
                 </div>
@@ -222,6 +251,7 @@ const RecordPage = {
             return;
         }
         AppData.saveJournal({ text });
-        App.showToast('收到，今天你真的很棒哦！ ⭐');
+        App.showToast('收到，今天你真的很棒哦！');
     }
 };
+

@@ -2,7 +2,10 @@ const DashboardPage = {
     state: {
         view: 'week',
         selectedDay: null,
-        shareAudience: 'partner'
+        shareStep: 'target',
+        shareTarget: '',
+        shareContent: [],
+        shareTone: ''
     },
 
     render() {
@@ -24,6 +27,7 @@ const DashboardPage = {
                 </div>
             </div>
         `;
+        this.initCharts();
     },
 
     switchView(view) {
@@ -33,13 +37,12 @@ const DashboardPage = {
         document.querySelectorAll('.segment-btn').forEach((btn, i) => {
             btn.classList.toggle('active', (i === 0 && view === 'week') || (i === 1 && view === 'month'));
         });
+        this.initCharts();
     },
 
-    /* ======= WEEK VIEW ======= */
     renderWeek() {
         const weekData = MockData.generateWeekData();
         const maxScore = 32;
-
         return `
             <div>
                 <div class="week-petals">
@@ -49,17 +52,12 @@ const DashboardPage = {
                         if (ratio > 0.25) color = '#F5D68A';
                         if (ratio > 0.5) color = '#F4C2A1';
                         if (ratio > 0.75) color = '#e8a07a';
-                        return `
-                            <div class="petal-item ${this.state.selectedDay === i ? 'selected' : ''}" onclick="DashboardPage.showDayDetail(${i})">
-                                <div class="petal-dot" style="background: ${color}"></div>
-                                <span class="petal-label">周${d.dayName}</span>
-                            </div>
-                        `;
+                        return '<div class="petal-item ' + (this.state.selectedDay === i ? 'selected' : '') + '" onclick="DashboardPage.showDayDetail(' + i + ')">' +
+                            '<div class="petal-dot petal-shape" style="background: ' + color + '"></div>' +
+                            '<span class="petal-label">周' + d.dayName + '</span></div>';
                     }).join('')}
                 </div>
-                <div class="week-summary">
-                    <p>${this.getWeekSummary(weekData)}</p>
-                </div>
+                <div class="week-summary"><p>${this.getWeekSummary(weekData)}</p></div>
                 ${this.renderStatModules()}
                 ${this.renderReportSection()}
             </div>
@@ -72,41 +70,29 @@ const DashboardPage = {
         if (recordDays === 0) return '这周还没有记录数据，开始记录后就能看到趋势啦。';
         if (totalScore < 8) return '这周整体状态不错，继续保持哦！';
         const worstDay = weekData.reduce((max, d) => d.score > max.score ? d : max, weekData[0]);
-        return `这周身体信号比较密集，尤其是周${worstDay.dayName}，你辛苦了。`;
+        return '这周身体信号比较密集，尤其是周' + worstDay.dayName + '，你辛苦了。';
     },
 
     showDayDetail(dayIndex) {
         this.state.selectedDay = dayIndex;
         const weekData = MockData.generateWeekData();
         const day = weekData[dayIndex];
-
         let detailHTML = '';
         if (day.record) {
             const symptoms = day.record.symptoms || {};
             const mood = day.record.mood || '未记录';
-            detailHTML = `
-                <div style="margin-top: 16px;">
-                    <p style="margin-bottom: 12px;"><strong>心情：</strong>${mood}</p>
-                    <h4 style="font-size: var(--font-caption); font-weight: 600; margin-bottom: 8px;">症状记录</h4>
-                    ${MockData.symptomQuestions.map(q => {
-                        const val = symptoms[q.id];
-                        if (val === undefined) return '';
-                        const level = MockData.severityLevels[val];
-                        return `<div class="detail-symptom-row">
-                            <span>${q.icon} ${q.field}</span>
-                            <span class="detail-severity" style="color: ${level.color}">${level.label}</span>
-                        </div>`;
-                    }).join('')}
-                </div>
-            `;
+            detailHTML = '<div style="margin-top: 16px;"><p style="margin-bottom: 12px;"><strong>心情：</strong>' + mood + '</p>' +
+                '<h4 style="font-size: var(--font-caption); font-weight: 600; margin-bottom: 8px;">症状记录</h4>' +
+                MockData.symptomQuestions.map(q => {
+                    const val = symptoms[q.id];
+                    if (val === undefined) return '';
+                    const level = MockData.severityLevels[val];
+                    return '<div class="detail-symptom-row"><span>' + q.icon + ' ' + q.field + '</span><span class="detail-severity" style="color: ' + level.color + '">' + level.label + '</span></div>';
+                }).join('') + '</div>';
         } else {
-            detailHTML = `<p style="text-align: center; color: var(--text-secondary); padding: 24px;">这天还没有记录</p>`;
+            detailHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 24px;">这天还没有记录</p>';
         }
-
-        DashboardPage.openDrawer(`
-            <h3 style="margin-bottom: 16px;">${day.date.slice(5)} 周${day.dayName}</h3>
-            ${detailHTML}
-        `);
+        this.openDrawer('<h3 style="margin-bottom: 16px;">' + day.date.slice(5) + ' 周' + day.dayName + '</h3>' + detailHTML);
     },
 
     openDrawer(contentHTML) {
@@ -116,7 +102,7 @@ const DashboardPage = {
         overlay.onclick = () => this.closeDrawer();
         const drawer = document.createElement('div');
         drawer.className = 'drawer';
-        drawer.innerHTML = `<div class="drawer-handle"></div>${contentHTML}`;
+        drawer.innerHTML = '<div class="drawer-handle"></div>' + contentHTML;
         document.body.appendChild(overlay);
         document.body.appendChild(drawer);
         requestAnimationFrame(() => { overlay.classList.add('show'); drawer.classList.add('show'); });
@@ -129,7 +115,6 @@ const DashboardPage = {
         });
     },
 
-    /* ======= MONTH VIEW ======= */
     renderMonth() {
         const today = new Date();
         const year = today.getFullYear();
@@ -140,21 +125,15 @@ const DashboardPage = {
         const journals = AppData.getJournals();
 
         let recordDays = 0, journalDays = 0;
-        Object.keys(records).forEach(k => {
-            const d = new Date(k);
-            if (d.getFullYear() === year && d.getMonth() === month) recordDays++;
-        });
-        Object.keys(journals).forEach(k => {
-            const d = new Date(k);
-            if (d.getFullYear() === year && d.getMonth() === month) journalDays++;
-        });
+        Object.keys(records).forEach(k => { const d = new Date(k); if (d.getFullYear() === year && d.getMonth() === month) recordDays++; });
+        Object.keys(journals).forEach(k => { const d = new Date(k); if (d.getFullYear() === year && d.getMonth() === month) journalDays++; });
 
         let calHTML = '<div class="month-calendar"><div class="cal-header">';
-        ['日', '一', '二', '三', '四', '五', '六'].forEach(d => { calHTML += `<span class="cal-header-cell">${d}</span>`; });
+        ['日','一','二','三','四','五','六'].forEach(d => { calHTML += '<span class="cal-header-cell">' + d + '</span>'; });
         calHTML += '</div><div class="cal-grid">';
         for (let i = 0; i < firstDay; i++) calHTML += '<span class="cal-cell empty"></span>';
         for (let d = 1; d <= daysInMonth; d++) {
-            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            const dateKey = year + '-' + String(month + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
             const rec = records[dateKey];
             let bgColor = 'transparent';
             let cls = 'cal-cell';
@@ -167,7 +146,7 @@ const DashboardPage = {
                 cls += ' has-data';
             }
             if (d === today.getDate()) cls += ' today';
-            calHTML += `<span class="${cls}" style="background: ${bgColor}">${d}</span>`;
+            calHTML += '<span class="' + cls + '" style="background: ' + bgColor + '">' + d + '</span>';
         }
         calHTML += '</div></div>';
 
@@ -176,262 +155,266 @@ const DashboardPage = {
                 <h3 style="margin-bottom: 12px; font-weight: 600;">${year}年${month + 1}月</h3>
                 ${calHTML}
                 <div class="stat-row">
-                    <div class="stat-card">
-                        <div class="stat-label">身心不适记录</div>
-                        <div class="stat-number">${recordDays}</div>
-                        <div class="stat-label">天</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-label">勇敢尝试记录</div>
-                        <div class="stat-number">${journalDays}</div>
-                        <div class="stat-label">天</div>
-                    </div>
+                    <div class="stat-card"><div class="stat-label">本月有 ${recordDays} 天记录了身心不适</div><div class="stat-number">${recordDays}</div></div>
+                    <div class="stat-card"><div class="stat-label">本月有 ${journalDays} 天我做了勇敢尝试</div><div class="stat-number">${journalDays}</div></div>
                 </div>
-                ${this.renderSymptomBreakdown(records, year, month)}
+                <canvas id="chartPie" width="300" height="200" style="margin-top:16px;"></canvas>
+                <canvas id="chartLine" width="300" height="180" style="margin-top:16px;"></canvas>
                 ${this.renderReportSection()}
             </div>
         `;
     },
 
-    /* ======= STAT MODULES ======= */
     renderStatModules() {
         const records = AppData.getAllRecords();
         const journals = AppData.getJournals();
         const now = new Date();
         const year = now.getFullYear();
         const month = now.getMonth();
-
         let recordDays = 0, journalDays = 0;
-        Object.keys(records).forEach(k => {
-            const d = new Date(k);
-            if (d.getFullYear() === year && d.getMonth() === month) recordDays++;
-        });
-        Object.keys(journals).forEach(k => {
-            const d = new Date(k);
-            if (d.getFullYear() === year && d.getMonth() === month) journalDays++;
-        });
+        Object.keys(records).forEach(k => { const d = new Date(k); if (d.getFullYear() === year && d.getMonth() === month) recordDays++; });
+        Object.keys(journals).forEach(k => { const d = new Date(k); if (d.getFullYear() === year && d.getMonth() === month) journalDays++; });
 
         return `
             <h3 class="dashboard-section-title">本月记录活跃度</h3>
             <div class="stat-row">
-                <div class="stat-card">
-                    <div class="stat-label">本月记录了身心不适</div>
-                    <div class="stat-number">${recordDays}</div>
-                    <div class="stat-label">天</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">我做了勇敢尝试</div>
-                    <div class="stat-number">${journalDays}</div>
-                    <div class="stat-label">天</div>
-                </div>
+                <div class="stat-card"><div class="stat-label">本月有 ${recordDays} 天记录了身心不适</div><div class="stat-number">${recordDays}</div></div>
+                <div class="stat-card"><div class="stat-label">本月有 ${journalDays} 天我做了勇敢尝试</div><div class="stat-number">${journalDays}</div></div>
             </div>
-            ${this.renderSymptomBreakdown(records, year, month)}
+            <canvas id="chartPie" width="300" height="200" style="margin-top:16px;"></canvas>
+            <canvas id="chartLine" width="300" height="180" style="margin-top:16px;"></canvas>
         `;
     },
 
-    /* ======= SYMPTOM BREAKDOWN ======= */
-    renderSymptomBreakdown(records, year, month) {
-        const fields = ['hotFlash', 'sleep', 'mood', 'fatigue', 'pain', 'memory', 'libido', 'incontinence'];
-        const icons = ['🌡️','🌙','💭','🍃','🦴','🧠','💫','💧'];
-        const counts = {};
-        fields.forEach(f => { counts[f] = { total: 0, mild: 0, moderate: 0, severe: 0, trend: [] }; });
+    initCharts() {
+        if (typeof Chart === 'undefined') return;
+        const records = AppData.getAllRecords();
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth();
+        const labels = ['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'];
+        const counts = [0,0,0,0,0,0,0,0];
+        const trendData = {};
 
         Object.entries(records).forEach(([dateKey, rec]) => {
             const d = new Date(dateKey);
             if (d.getFullYear() !== year || d.getMonth() !== month) return;
             const symptoms = rec.symptoms || {};
-            fields.forEach((f, i) => {
+            for (let i = 0; i < 8; i++) {
                 const v = symptoms[i + 1];
                 if (v !== undefined && v > 0) {
-                    counts[f].total++;
-                    if (v === 1) counts[f].mild++;
-                    if (v === 2) counts[f].mild++; counts[f].moderate++;
-                    if (v === 2) counts[f].moderate++;
-                    if (v === 3) { counts[f].moderate++; counts[f].severe++; }
-                    if (v === 4) counts[f].severe++;
-                    counts[f].trend.push({ date: dateKey, value: v });
+                    counts[i] += v;
+                    if (!trendData[dateKey]) trendData[dateKey] = {};
+                    trendData[dateKey][i] = v;
                 }
-            });
+            }
         });
 
-        const sorted = fields.map(f => ({ field: f, ...counts[f] })).filter(c => c.total > 0).sort((a, b) => b.total - a.total);
-        const totalAll = sorted.reduce((s, c) => s + c.total, 0);
-        const top4 = sorted.slice(0, 4);
-
-        if (totalAll === 0) {
-            return `<div class="viz-card"><p style="text-align:center; color: var(--text-secondary); padding: 24px;">本月还没有症状记录，开始记录后这里会显示统计</p></div>`;
+        const pieEl = document.getElementById('chartPie');
+        if (pieEl && counts.some(c => c > 0)) {
+            new Chart(pieEl, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{ data: counts, backgroundColor: ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+            });
         }
 
-        return `
-            <h3 class="dashboard-section-title">本月症状统计</h3>
-            <div class="viz-card">
-                <h4>8种症状整体分布</h4>
-                <div class="symptom-grid">
-                    ${fields.map((f, i) => {
-                        const c = counts[f];
-                        const pct = totalAll > 0 ? (c.total / totalAll * 100) : 0;
-                        return `
-                            <div class="symptom-grid-item">
-                                <div class="symptom-name">${icons[i]} ${['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'][i]}</div>
-                                <div class="symptom-count">${c.total}</div>
-                                <div class="symptom-bar"><div class="symptom-bar-fill" style="width:${pct}%"></div></div>
-                            </div>
-                        `;
-                    }).join('')}
-                </div>
-            </div>
-
-            ${top4.length > 0 ? `
-            <div class="viz-card">
-                <h4>前${top4.length}个症状轻重层级关系</h4>
-                <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">🌿 轻度 · 🌼 中度 · 🍑 重度（三层可能有交集）</p>
-                <div class="venn-container">
-                    <div class="venn-circle mild">轻度<br>${top4.reduce((s,c) => s+c.mild,0)}次</div>
-                    <div class="venn-circle moderate">中度<br>${top4.reduce((s,c) => s+c.moderate,0)}次</div>
-                    <div class="venn-circle severe">重度<br>${top4.reduce((s,c) => s+c.severe,0)}次</div>
-                </div>
-            </div>
-            ` : ''}
-
-            ${top4.filter(c => c.trend.length >= 3).length > 0 ? `
-            <div class="viz-card">
-                <h4>症状加剧趋势</h4>
-                <p style="font-size:13px;color:var(--text-muted);margin-bottom:8px;">仅当本月记录有"轻→中→重"趋势时显示</p>
-                ${top4.filter(c => c.trend.length >= 3).map(c => {
-                    const vals = c.trend.map(t => t.value);
-                    const increasing = vals[vals.length - 1] > vals[0];
-                    if (!increasing) return '';
-                    return `
-                        <div style="margin-bottom:12px;">
-                            <p style="font-size:13px;font-weight:600;margin-bottom:4px;">${icons[fields.indexOf(c.field)]} ${['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'][fields.indexOf(c.field)]}</p>
-                            <div class="trend-chart">
-                                ${c.trend.map(t => {
-                                    const h = (t.value / 4) * 100;
-                                    const colors = ['#A3C9A8','#F5D68A','#F4C2A1','#e8a07a'];
-                                    return `<div class="trend-bar" style="height:${h}%; background:${colors[t.value]}"></div>`;
-                                }).join('')}
-                            </div>
-                        </div>
-                    `;
-                }).join('')}
-            </div>
-            ` : ''}
-        `;
+        const lineEl = document.getElementById('chartLine');
+        const dates = Object.keys(trendData).sort();
+        if (lineEl && dates.length > 0) {
+            const topSymptom = counts.indexOf(Math.max(...counts));
+            const lineData = dates.map(dk => trendData[dk][topSymptom] || 0);
+            new Chart(lineEl, {
+                type: 'line',
+                data: {
+                    labels: dates.map(dk => dk.slice(5)),
+                    datasets: [{ label: labels[topSymptom] + ' 严重程度', data: lineData, borderColor: '#E76F51', backgroundColor: 'rgba(231,111,81,0.1)', fill: true, tension: 0.3 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }, plugins: { legend: { display: true, position: 'bottom' } } }
+            });
+        }
     },
 
-    /* ======= REPORT & SHARE ======= */
     renderReportSection() {
         return `
             <div class="report-section">
                 <h3>报告与分享</h3>
                 <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                    <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.showReport('week')">生成周度报告</button>
-                    <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.showReport('month')">生成月度报告</button>
+                    <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.showReportPage('week')">生成周度报告</button>
+                    <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.showReportPage('month')">生成月度报告</button>
                 </div>
-                <button class="btn btn-primary" style="width:100%;" onclick="DashboardPage.showShareModal()">分享给亲友</button>
+                <button class="btn btn-primary" style="width:100%;" onclick="DashboardPage.showSharePage()">分享给亲友</button>
             </div>
         `;
     },
 
-    showReport(type) {
+    showReportPage(type) {
         const label = type === 'week' ? '周度' : '月度';
-        this.openDrawer(`
-            <div class="drawer-handle"></div>
-            <h3 style="margin-bottom: 12px;">${label}报告预览</h3>
-            <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 16px;">报告包含：趋势总结、主要困扰变化、正向事件回顾</p>
-            <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 20px; min-height: 150px; font-size: var(--font-caption); color: var(--text-secondary); line-height: 1.8;">
-                <p>📊 <strong>趋势总结</strong></p>
-                <p style="margin-bottom: 12px;">近期状态有所波动，部分信号值得关注。</p>
-                <p>✨ <strong>正向事件回顾</strong></p>
-                <p>本${label === '周度' ? '周' : '月'}你坚持记录了${type === 'week' ? '3' : '12'}次身心感受，这是对自己的温柔关注。</p>
-            </div>
-            <div style="display: flex; gap: 10px; margin-top: 16px;">
-                <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.closeDrawer(); DashboardPage.showShareModal()">分享报告</button>
-                <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.closeDrawer()">关闭</button>
-            </div>
-        `);
-    },
-
-    /* ======= SHARE MODAL ======= */
-    showShareModal() {
-        this.closeDrawer();
-        const overlay = document.createElement('div');
-        overlay.className = 'drawer-overlay';
-        overlay.onclick = () => { overlay.remove(); document.querySelector('.share-modal')?.remove(); };
-
-        const modal = document.createElement('div');
-        modal.className = 'share-modal';
-        modal.innerHTML = `
-            <div class="share-modal-content">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h3 style="font-size:var(--font-h2);">分享给</h3>
-                    <button style="width:44px;height:44px;border:none;background:none;font-size:20px;cursor:pointer;"
-                        onclick="document.querySelector('.drawer-overlay')?.remove(); document.querySelector('.share-modal')?.remove()">✕</button>
+        const container = document.getElementById('page-container');
+        container.innerHTML = `
+            <div class="page">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="DashboardPage.render()">← 返回</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">${label}报告</span>
+                    <button class="btn btn-ghost" style="font-size:13px;padding:4px 10px;" onclick="DashboardPage.showSharePage()">一键分享</button>
                 </div>
-                <div class="share-audience-tabs">
-                    <button class="share-audience-btn ${this.state.shareAudience==='partner'?'active':''}" onclick="DashboardPage.selectAudience('partner')">致伴侣</button>
-                    <button class="share-audience-btn ${this.state.shareAudience==='family'?'active':''}" onclick="DashboardPage.selectAudience('family')">致子女</button>
-                    <button class="share-audience-btn ${this.state.shareAudience==='friend'?'active':''}" onclick="DashboardPage.selectAudience('friend')">致朋友</button>
-                    <button class="share-audience-btn ${this.state.shareAudience==='doctor'?'active':''}" onclick="DashboardPage.selectAudience('doctor')">致医生</button>
+                <p style="font-size: var(--font-caption); color: var(--text-secondary); margin: 12px 0;">报告包含：趋势总结、主要困扰变化、正向事件回顾</p>
+                <div style="background: var(--bg-primary); border-radius: var(--radius-sm); padding: 20px; font-size: var(--font-caption); color: var(--text-secondary); line-height: 1.8;">
+                    <p style="font-weight:600;color:var(--text-primary);">📊 趋势总结</p>
+                    <p style="margin-bottom: 12px;">近期状态有所波动，部分信号值得关注。</p>
+                    <p style="font-weight:600;color:var(--text-primary);">✨ 正向事件回顾</p>
+                    <p>本${label === '周度' ? '周' : '月'}你坚持记录了身心感受，这是对自己的温柔关注。</p>
                 </div>
-                <div class="share-preview ${this.getShareTemplateClass()}">
-                    ${this.getShareTemplateContent()}
-                </div>
-                <div class="share-actions">
-                    <button class="btn btn-primary" style="flex:1" onclick="App.showToast('分享功能开发中')">采用模板并分享</button>
-                    <button class="btn btn-secondary" style="flex:1" onclick="App.showToast('自定义功能开发中')">自定义内容</button>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.showSharePage()">分享报告</button>
+                    <button class="btn btn-secondary" style="flex:1" onclick="DashboardPage.render()">返回看板</button>
                 </div>
             </div>
         `;
-
-        document.body.appendChild(overlay);
-        document.body.appendChild(modal);
-        requestAnimationFrame(() => overlay.classList.add('show'));
     },
 
-    selectAudience(audience) {
-        this.state.shareAudience = audience;
-        const content = document.querySelector('.share-modal-content');
-        if (!content) return;
-        content.querySelectorAll('.share-audience-btn').forEach(b => b.classList.remove('active'));
-        content.querySelector(`.share-audience-btn:nth-child(${{partner:1,family:2,friend:3,doctor:4}[audience]})`).classList.add('active');
-        const preview = content.querySelector('.share-preview');
-        preview.className = `share-preview ${this.getShareTemplateClass()}`;
-        preview.innerHTML = this.getShareTemplateContent();
+    showSharePage() {
+        this.state.shareStep = 'target';
+        this.state.shareTarget = '';
+        this.state.shareContent = [];
+        this.state.shareTone = '';
+        this.renderShareStep();
     },
 
-    getShareTemplateClass() {
-        return {
-            partner: 'share-template-partner',
-            family: 'share-template-family',
-            friend: 'share-template-friend',
-            doctor: 'share-template-doctor'
-        }[this.state.shareAudience];
+    renderShareStep() {
+        const container = document.getElementById('page-container');
+        switch (this.state.shareStep) {
+            case 'target': container.innerHTML = this.renderShareTarget(); break;
+            case 'content': container.innerHTML = this.renderShareContent(); break;
+            case 'tone': container.innerHTML = this.renderShareTone(); break;
+            case 'draft': container.innerHTML = this.renderShareDraft(); break;
+        }
     },
 
-    getShareTemplateContent() {
-        const templates = {
-            partner: `
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);margin-bottom:8px;">🌅 温馨亲密 · 致伴侣</p>
-                <p style="font-size:var(--font-body);font-weight:600;margin-bottom:8px;">最近身体有些变化，谢谢你一直陪在我身边。</p>
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);line-height:1.6;">这些信号是身体阶段变化的一部分，有你理解，我感觉好多了。</p>
-            `,
-            family: `
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);margin-bottom:8px;">🌿 关怀孝心 · 致子女</p>
-                <p style="font-size:var(--font-body);font-weight:600;margin-bottom:8px;">妈妈最近身体有些变化，想跟你们分享一下。</p>
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);line-height:1.6;">这些是更年期阶段常见的信号，不用太担心，妈妈已经在关注和调整了。</p>
-            `,
-            friend: `
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);margin-bottom:8px;">💜 轻松活泼 · 致朋友</p>
-                <p style="font-size:var(--font-body);font-weight:600;margin-bottom:8px;">嘿！最近身体在悄悄变化，想跟你聊聊～</p>
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);line-height:1.6;">姐妹你也有类似感受吗？一起分享下！</p>
-            `,
-            doctor: `
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);margin-bottom:8px;">📋 就诊备忘 · 致医生</p>
-                <p style="font-size:var(--font-body);font-weight:600;margin-bottom:8px;">以下是我近期关注的身体变化，供您参考。</p>
-                <p style="font-size:var(--font-caption);color:var(--text-secondary);line-height:1.6;">主要困扰：潮热、睡眠、情绪。详细数据如上。</p>
-            `
-        };
-        return templates[this.state.shareAudience];
+    renderShareTarget() {
+        const targets = ['伴侣', '子女', '朋友/姐妹', '医生', '其他'];
+        return `
+            <div class="page">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="DashboardPage.render()">← 返回</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">理解分享</span>
+                    <span></span>
+                </div>
+                <p style="color:var(--text-secondary);margin: 12px 0;">你想把这份说明发给谁？</p>
+                <div class="share-option-list">
+                    ${targets.map(t => '<button class="share-option-item ' + (this.state.shareTarget === t ? 'active' : '') + '" onclick="DashboardPage.selectTarget(\'' + t + '\')">' + t + '</button>').join('')}
+                </div>
+                <button class="btn btn-primary" style="width:100%;margin-top:20px;" ${!this.state.shareTarget ? 'disabled' : ''} onclick="DashboardPage.state.shareStep='content';DashboardPage.renderShareStep()">下一步</button>
+            </div>
+        `;
+    },
+
+    selectTarget(t) {
+        this.state.shareTarget = t;
+        this.renderShareStep();
+    },
+
+    renderShareContent() {
+        const chips = ['睡眠变化', '情绪变化', '身体不适', '希望得到的支持', '只分享科普', '就医前症状整理'];
+        return `
+            <div class="page">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="DashboardPage.state.shareStep='target';DashboardPage.renderShareStep()">← 上一步</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">选择内容</span>
+                    <span></span>
+                </div>
+                <p style="color:var(--text-secondary);margin: 12px 0;">你想让对方了解哪些？（可多选）</p>
+                <div class="share-chip-group">
+                    ${chips.map(c => '<button class="share-chip ' + (this.state.shareContent.includes(c) ? 'active' : '') + '" onclick="DashboardPage.toggleContent(\'' + c + '\')">' + c + '</button>').join('')}
+                </div>
+                <button class="btn btn-primary" style="width:100%;margin-top:20px;" ${this.state.shareContent.length === 0 ? 'disabled' : ''} onclick="DashboardPage.state.shareStep='tone';DashboardPage.renderShareStep()">下一步</button>
+            </div>
+        `;
+    },
+
+    toggleContent(c) {
+        const idx = this.state.shareContent.indexOf(c);
+        if (idx >= 0) this.state.shareContent.splice(idx, 1);
+        else this.state.shareContent.push(c);
+        this.renderShareStep();
+    },
+
+    renderShareTone() {
+        const tones = ['温和说明', '认真沟通', '简短提醒', '轻松一点'];
+        return `
+            <div class="page">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="DashboardPage.state.shareStep='content';DashboardPage.renderShareStep()">← 上一步</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">选择语气</span>
+                    <span></span>
+                </div>
+                <p style="color:var(--text-secondary);margin: 12px 0;">你希望这段话是什么语气？</p>
+                <div class="share-option-list">
+                    ${tones.map(t => '<button class="share-option-item ' + (this.state.shareTone === t ? 'active' : '') + '" onclick="DashboardPage.selectTone(\'' + t + '\')">' + t + '</button>').join('')}
+                </div>
+                <button class="btn btn-primary" style="width:100%;margin-top:20px;" ${!this.state.shareTone ? 'disabled' : ''} onclick="DashboardPage.state.shareStep='draft';DashboardPage.renderShareStep()">生成草稿</button>
+            </div>
+        `;
+    },
+
+    selectTone(t) {
+        this.state.shareTone = t;
+        this.renderShareStep();
+    },
+
+    renderShareDraft() {
+        const draft = this.generateDraft();
+        return `
+            <div class="page">
+                <div class="chat-header">
+                    <button class="btn-back" onclick="DashboardPage.state.shareStep='tone';DashboardPage.renderShareStep()">← 我再改改</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">你的分享说明</span>
+                    <span></span>
+                </div>
+                <p style="font-size:14px;color:var(--text-secondary);margin: 12px 0;">根据你的选择生成的草稿，可以修改后再分享。</p>
+                <div class="share-draft-box">${draft}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
+                    <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.copyDraft()">📋 复制文字</button>
+                    <button class="btn btn-secondary" style="flex:1" onclick="App.showToast('图片生成功能开发中')">🖼️ 生成图片</button>
+                </div>
+                <button class="btn btn-ghost" style="width:100%;margin-top:10px;" onclick="DashboardPage.render()">保存草稿，稍后再看</button>
+            </div>
+        `;
+    },
+
+    generateDraft() {
+        const target = this.state.shareTarget;
+        const content = this.state.shareContent;
+        const tone = this.state.shareTone;
+        if (typeof shareTemplates !== 'undefined') {
+            const toneKey = { '温和说明': 'gentle', '认真沟通': 'serious', '简短提醒': 'brief', '轻松一点': 'casual' }[tone] || 'gentle';
+            const targetKey = { '伴侣': 'partner', '子女': 'child', '朋友/姐妹': 'friend', '医生': 'doctor' }[target] || 'partner';
+            const fn = shareTemplates[targetKey] && shareTemplates[targetKey][toneKey];
+            if (fn) return fn(content);
+        }
+        let text = '';
+        if (target === '伴侣') text = '亲爱的，最近我的身体有些变化，想跟你聊聊。';
+        else if (target === '子女') text = '孩子，妈妈最近身体有些变化，想让你了解一下。';
+        else if (target === '朋友/姐妹') text = '姐妹，最近身体在悄悄变化，想跟你分享～';
+        else if (target === '医生') text = '医生您好，以下是我近期关注的身体变化。';
+        else text = '你好，想跟你分享一下我最近的身体变化。';
+        if (content.length > 0) text += '\n\n主要想聊聊：' + content.join('、') + '。';
+        text += '\n\n这些都是更年期阶段正常的身体信号，有你的理解和支持，我会更好的。';
+        return text.replace(/\n/g, '<br>');
+    },
+
+    copyDraft() {
+        const box = document.querySelector('.share-draft-box');
+        if (!box) return;
+        const text = box.innerText;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(text).then(() => App.showToast('已复制到剪贴板'));
+        } else {
+            App.showToast('已复制到剪贴板');
+        }
     }
 };
+
