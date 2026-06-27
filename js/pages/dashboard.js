@@ -381,7 +381,7 @@ const DashboardPage = {
                 <p style="color:var(--text-secondary);margin: 12px 0;">你想把这份说明发给谁？</p>
                 <div class="share-option-list">
                     ${targets.map(t => `
-                        <button class="share-target-card ${this.state.shareTarget === t.label ? 'active' : ''}" onclick="DashboardPage.selectTarget('${t.label}')">
+                        <button class="share-target-card ${this.state.shareTarget === t.label ? 'active' : ''}" data-share-value="${t.label}" onclick="DashboardPage.selectTarget('${t.label}')">
                             <span class="share-target-icon">${t.icon}</span>
                             <div>
                                 <div style="font-size:var(--font-body);font-weight:600;">${t.label}</div>
@@ -397,7 +397,11 @@ const DashboardPage = {
 
     selectTarget(t) {
         this.state.shareTarget = t;
-        this.renderShareStep();
+        document.querySelectorAll('.share-target-card').forEach(c => {
+            c.classList.toggle('active', c.dataset.shareValue === t);
+        });
+        const nextBtn = document.querySelector('#page-container .btn-primary');
+        if (nextBtn && nextBtn.textContent.includes('下一步')) nextBtn.disabled = false;
     },
 
     renderShareContent() {
@@ -417,18 +421,22 @@ const DashboardPage = {
                 </div>
                 <p style="color:var(--text-secondary);margin: 12px 0;">你想让对方了解哪些？（可多选）</p>
                 <div class="share-chip-group">
-                    ${chips.map(c => '<button class="share-chip ' + (this.state.shareContent.includes(c) ? 'active' : '') + '" onclick="DashboardPage.toggleContent(\'' + c + '\')">' + c + '</button>').join('')}
+                    ${chips.map(c => '<button class="share-chip ' + (this.state.shareContent.includes(c) ? 'active' : '') + '" onclick="DashboardPage.toggleContent(\'' + c + '\', this)">' + c + '</button>').join('')}
                 </div>
                 <button class="btn btn-primary" style="width:100%;margin-top:20px;" ${this.state.shareContent.length === 0 ? 'disabled' : ''} onclick="DashboardPage.state.shareStep='tone';DashboardPage.renderShareStep()">下一步</button>
             </div>
         `;
     },
 
-    toggleContent(c) {
+    toggleContent(c, el) {
         const idx = this.state.shareContent.indexOf(c);
         if (idx >= 0) this.state.shareContent.splice(idx, 1);
         else this.state.shareContent.push(c);
-        this.renderShareStep();
+        if (el) el.classList.toggle('active');
+        const nextBtn = document.querySelector('#page-container .btn-primary');
+        if (nextBtn && nextBtn.textContent.includes('下一步')) {
+            nextBtn.disabled = this.state.shareContent.length === 0;
+        }
     },
 
     renderShareTone() {
@@ -454,7 +462,7 @@ const DashboardPage = {
                 <p style="color:var(--text-secondary);margin: 12px 0;">你希望这段话是什么语气？</p>
                 <div class="share-option-list">
                     ${tones.map(t => `
-                        <button class="share-target-card ${this.state.shareTone === t.label ? 'active' : ''}" onclick="DashboardPage.selectTone('${t.label}')">
+                        <button class="share-target-card ${this.state.shareTone === t.label ? 'active' : ''}" data-share-value="${t.label}" onclick="DashboardPage.selectTone('${t.label}')">
                             <span class="share-target-icon">${t.icon}</span>
                             <div>
                                 <div style="font-size:var(--font-body);font-weight:600;">${t.label}</div>
@@ -470,7 +478,11 @@ const DashboardPage = {
 
     selectTone(t) {
         this.state.shareTone = t;
-        this.renderShareStep();
+        document.querySelectorAll('.share-target-card').forEach(c => {
+            c.classList.toggle('active', c.dataset.shareValue === t);
+        });
+        const nextBtn = document.querySelector('#page-container .btn-primary');
+        if (nextBtn && nextBtn.textContent.includes('生成草稿')) nextBtn.disabled = false;
     },
 
     renderShareDraft() {
