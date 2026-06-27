@@ -1,4 +1,4 @@
-const AppData = {
+﻿const AppData = {
     getSettings() {
         const defaults = {
             fontSize: 'standard',
@@ -261,6 +261,8 @@ const DeepSeekAPI = {
         }
     }
 };
+
+const MockData = {
     kuppermanIntro: {
         title: 'Kupperman 更年期症状评估',
         description: 'Kupperman改良评分是国际通用的更年期症状评估工具，它将更年期女性模糊的"难受"转化为可量化数据，有助于个人追踪症状变化，也为就医时与医生沟通提供客观参考。建议您按最近一个月的真实感受完成自测。',
