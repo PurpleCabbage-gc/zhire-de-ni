@@ -283,60 +283,8 @@ const DashboardPage = {
             });
         }
 
-        const lineEl = document.getElementById('chartLine');
-        if (lineEl) {
-            const si = this.state.selectedLineSymptom || 0;
-            const lineColor = ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB'];
-            const dates = Object.keys(trendData).sort();
-
-            let lineLabels, lineData;
-            if (dates.length === 0) {
-                lineLabels = [];
-                lineData = [];
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const pastDays = Math.min(daysInMonth, now.getDate());
-                for (let d = 1; d <= pastDays; d++) {
-                    lineLabels.push((month + 1) + '/' + d);
-                    lineData.push(Math.floor(Math.random() * 4) + 1);
-                }
-            } else {
-                // Ensure one data point per label
-                lineLabels = dates.map(dk => dk.slice(5));
-                lineData = dates.map(dk => trendData[dk][si] !== undefined ? trendData[dk][si] : 0);
-            }
-
-            // If only 1 data point, add a second to draw a visible line
-            if (lineLabels.length === 1) {
-                lineLabels = [lineLabels[0], ''];
-                lineData = [lineData[0], lineData[0]];
-            }
-
-            new Chart(lineEl, {
-                type: 'line',
-                data: {
-                    labels: lineLabels,
-                    datasets: [{
-                        label: labels[si] + ' 严重程度',
-                        data: lineData,
-                        borderColor: lineColor[si],
-                        backgroundColor: lineColor[si] + '20',
-                        fill: true,
-                        tension: 0.3,
-                        pointRadius: 3,
-                        pointBackgroundColor: lineColor[si]
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    scales: {
-                        x: { ticks: { maxTicksLimit: 15, font: { size: 10 }, autoSkip: true } },
-                        y: { min: 0, max: 4, ticks: { stepSize: 1, font: { size: 11 } }, title: { display: true, text: '严重程度', font: { size: 10 } } }
-                    },
-                    plugins: { legend: { display: false } }
-                }
-            });
-        }
+        // Use buildLineChart so initial chart matches re-select behavior
+        this.buildLineChart();
     },
 
     selectLineSymptom(index) {
@@ -355,6 +303,9 @@ const DashboardPage = {
         if (typeof Chart === 'undefined') return;
         const lineEl = document.getElementById('chartLine');
         if (!lineEl) return;
+        // Destroy old instance if exists
+        const old = Chart.getChart('chartLine');
+        if (old) old.destroy();
 
         const records = this.getRecordsWithFallback();
         const now = new Date();
