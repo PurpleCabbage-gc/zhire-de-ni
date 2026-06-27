@@ -75,7 +75,8 @@ const RecordPage = {
         const total = questions.length + 1;
 
         return `
-            <div class="symptom-card" style="animation: cardIn 400ms var(--ease-out)">
+            <div class="symptom-card card-sticky" style="animation: cardIn 400ms var(--ease-out)">
+                <div class="sticky-tape"></div>
                 <div class="symptom-progress">【${this.state.currentSymptom + 1}/${total}】</div>
                 <div class="progress-bar">
                     <div class="progress-fill" style="width: ${((this.state.currentSymptom + 1) / total) * 100}%"></div>

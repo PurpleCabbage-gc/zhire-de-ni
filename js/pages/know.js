@@ -30,7 +30,7 @@ const KnowPage = {
                 <div class="card card-brand assessment-entry" onclick="KnowPage.startAssessment()">
                     <h2>3分钟，了解近期状态</h2>
                     <p>Kupperman国际标准量表 · 13项症状科学评估</p>
-                    <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 44px; padding: 10px 20px; font-weight: 600; border-radius: 12px;">开始测评</button>
+                    <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 56px; padding: 14px 24px; font-weight: 600; border-radius: 12px;">开始测评</button>
                 </div>
 
                 <div style="display:flex;gap:10px;margin-top:12px;">

@@ -2,6 +2,7 @@ const DashboardPage = {
     state: {
         view: 'week',
         selectedDay: null,
+        statsOpen: false,
         shareStep: 'target',
         shareTarget: '',
         shareContent: [],
@@ -66,7 +67,7 @@ const DashboardPage = {
                     }).join('')}
                 </div>
                 <div class="week-summary"><p>${this.getWeekSummary(weekData)}</p></div>
-                ${this.renderStatModules()}
+                ${this.renderStatsDrawer()}
                 ${this.renderReportSection()}
             </div>
         `;
@@ -182,18 +183,13 @@ const DashboardPage = {
             <div>
                 <h3 style="margin-bottom: 12px; font-weight: 600;">${year}年${month + 1}月</h3>
                 ${calHTML}
-                <div class="stat-row">
-                    <div class="stat-card"><div class="stat-label">本月有 ${recordDays} 天记录了身心不适</div><div class="stat-number">${recordDays}</div></div>
-                    <div class="stat-card"><div class="stat-label">本月有 ${journalDays} 天我做了勇敢尝试</div><div class="stat-number">${journalDays}</div></div>
-                </div>
-                <canvas id="chartPie" width="300" height="200" style="margin-top:16px;"></canvas>
-                <canvas id="chartLine" width="300" height="180" style="margin-top:16px;"></canvas>
+                ${this.renderStatsDrawer()}
                 ${this.renderReportSection()}
             </div>
         `;
     },
 
-    renderStatModules() {
+    renderStatsDrawer() {
         const records = this.getRecordsWithFallback();
         const journals = AppData.getJournals();
         const now = new Date();
@@ -204,14 +200,33 @@ const DashboardPage = {
         Object.keys(journals).forEach(k => { const d = new Date(k); if (d.getFullYear() === year && d.getMonth() === month) journalDays++; });
 
         return `
-            <h3 class="dashboard-section-title">本月记录活跃度</h3>
-            <div class="stat-row">
-                <div class="stat-card"><div class="stat-label">本月有 ${recordDays} 天记录了身心不适</div><div class="stat-number">${recordDays}</div></div>
-                <div class="stat-card"><div class="stat-label">本月有 ${journalDays} 天我做了勇敢尝试</div><div class="stat-number">${journalDays}</div></div>
+            <div class="stats-drawer ${this.state.statsOpen ? 'open' : ''}">
+                <div class="stats-handle" onclick="DashboardPage.toggleStats()">
+                    <span class="stats-handle-bar"></span>
+                    <span style="font-size:13px;color:var(--text-muted);">${this.state.statsOpen ? '收起详细数据' : '展开详细数据'}</span>
+                </div>
+                <div class="stats-body">
+                    <h3 class="dashboard-section-title">本月记录活跃度</h3>
+                    <div class="stat-row">
+                        <div class="stat-card"><div class="stat-label">本月有 ${recordDays} 天记录了身心不适</div><div class="stat-number">${recordDays}</div></div>
+                        <div class="stat-card"><div class="stat-label">本月有 ${journalDays} 天我做了勇敢尝试</div><div class="stat-number">${journalDays}</div></div>
+                    </div>
+                    <canvas id="chartPie" width="300" height="200" style="margin-top:12px;"></canvas>
+                    <canvas id="chartLine" width="300" height="180" style="margin-top:12px;"></canvas>
+                </div>
             </div>
-            <canvas id="chartPie" width="300" height="200" style="margin-top:16px;"></canvas>
-            <canvas id="chartLine" width="300" height="180" style="margin-top:16px;"></canvas>
         `;
+    },
+
+    toggleStats() {
+        this.state.statsOpen = !this.state.statsOpen;
+        const drawer = document.querySelector('.stats-drawer');
+        if (drawer) {
+            drawer.classList.toggle('open', this.state.statsOpen);
+            if (this.state.statsOpen) {
+                setTimeout(() => this.initCharts(), 350);
+            }
+        }
     },
 
     initCharts() {
@@ -343,7 +358,13 @@ const DashboardPage = {
     },
 
     renderShareTarget() {
-        const targets = ['伴侣', '子女', '朋友/姐妹', '医生', '其他'];
+        const targets = [
+            { label: '伴侣', icon: '💑', desc: '致最亲近的人' },
+            { label: '子女', icon: '👨‍👩‍👧', desc: '让孩子更懂你' },
+            { label: '朋友/姐妹', icon: '👭', desc: '闺蜜间的分享' },
+            { label: '医生', icon: '🩺', desc: '就诊时辅助沟通' },
+            { label: '其他', icon: '💬', desc: '自定义分享对象' }
+        ];
         return `
             <div class="page">
                 <div class="chat-header">
@@ -351,9 +372,23 @@ const DashboardPage = {
                     <span style="font-weight: 600; font-size: var(--font-h2);">理解分享</span>
                     <span></span>
                 </div>
+                <div class="share-steps">
+                    <span class="share-step active">1</span><span class="share-step-line"></span>
+                    <span class="share-step">2</span><span class="share-step-line"></span>
+                    <span class="share-step">3</span><span class="share-step-line"></span>
+                    <span class="share-step">4</span>
+                </div>
                 <p style="color:var(--text-secondary);margin: 12px 0;">你想把这份说明发给谁？</p>
                 <div class="share-option-list">
-                    ${targets.map(t => '<button class="share-option-item ' + (this.state.shareTarget === t ? 'active' : '') + '" onclick="DashboardPage.selectTarget(\'' + t + '\')">' + t + '</button>').join('')}
+                    ${targets.map(t => `
+                        <button class="share-target-card ${this.state.shareTarget === t.label ? 'active' : ''}" onclick="DashboardPage.selectTarget('${t.label}')">
+                            <span class="share-target-icon">${t.icon}</span>
+                            <div>
+                                <div style="font-size:var(--font-body);font-weight:600;">${t.label}</div>
+                                <div style="font-size:var(--font-caption);color:var(--text-secondary);">${t.desc}</div>
+                            </div>
+                        </button>
+                    `).join('')}
                 </div>
                 <button class="btn btn-primary" style="width:100%;margin-top:20px;" ${!this.state.shareTarget ? 'disabled' : ''} onclick="DashboardPage.state.shareStep='content';DashboardPage.renderShareStep()">下一步</button>
             </div>
@@ -374,6 +409,12 @@ const DashboardPage = {
                     <span style="font-weight: 600; font-size: var(--font-h2);">选择内容</span>
                     <span></span>
                 </div>
+                <div class="share-steps">
+                    <span class="share-step done">✓</span><span class="share-step-line done"></span>
+                    <span class="share-step active">2</span><span class="share-step-line"></span>
+                    <span class="share-step">3</span><span class="share-step-line"></span>
+                    <span class="share-step">4</span>
+                </div>
                 <p style="color:var(--text-secondary);margin: 12px 0;">你想让对方了解哪些？（可多选）</p>
                 <div class="share-chip-group">
                     ${chips.map(c => '<button class="share-chip ' + (this.state.shareContent.includes(c) ? 'active' : '') + '" onclick="DashboardPage.toggleContent(\'' + c + '\')">' + c + '</button>').join('')}
@@ -391,7 +432,12 @@ const DashboardPage = {
     },
 
     renderShareTone() {
-        const tones = ['温和说明', '认真沟通', '简短提醒', '轻松一点'];
+        const tones = [
+            { label: '温和说明', icon: '🌸', desc: '柔软温和，适合初次沟通' },
+            { label: '认真沟通', icon: '📝', desc: '正式清晰，适合深入交流' },
+            { label: '简短提醒', icon: '💡', desc: '简洁直接，适合日常提醒' },
+            { label: '轻松一点', icon: '😊', desc: '轻松幽默，适合亲密关系' }
+        ];
         return `
             <div class="page">
                 <div class="chat-header">
@@ -399,9 +445,23 @@ const DashboardPage = {
                     <span style="font-weight: 600; font-size: var(--font-h2);">选择语气</span>
                     <span></span>
                 </div>
+                <div class="share-steps">
+                    <span class="share-step done">✓</span><span class="share-step-line done"></span>
+                    <span class="share-step done">✓</span><span class="share-step-line done"></span>
+                    <span class="share-step active">3</span><span class="share-step-line"></span>
+                    <span class="share-step">4</span>
+                </div>
                 <p style="color:var(--text-secondary);margin: 12px 0;">你希望这段话是什么语气？</p>
                 <div class="share-option-list">
-                    ${tones.map(t => '<button class="share-option-item ' + (this.state.shareTone === t ? 'active' : '') + '" onclick="DashboardPage.selectTone(\'' + t + '\')">' + t + '</button>').join('')}
+                    ${tones.map(t => `
+                        <button class="share-target-card ${this.state.shareTone === t.label ? 'active' : ''}" onclick="DashboardPage.selectTone('${t.label}')">
+                            <span class="share-target-icon">${t.icon}</span>
+                            <div>
+                                <div style="font-size:var(--font-body);font-weight:600;">${t.label}</div>
+                                <div style="font-size:var(--font-caption);color:var(--text-secondary);">${t.desc}</div>
+                            </div>
+                        </button>
+                    `).join('')}
                 </div>
                 <button class="btn btn-primary" style="width:100%;margin-top:20px;" ${!this.state.shareTone ? 'disabled' : ''} onclick="DashboardPage.state.shareStep='draft';DashboardPage.renderShareStep()">生成草稿</button>
             </div>
@@ -415,6 +475,7 @@ const DashboardPage = {
 
     renderShareDraft() {
         const draft = this.generateDraft();
+        const colorClass = this.getDraftColorClass();
         return `
             <div class="page">
                 <div class="chat-header">
@@ -422,27 +483,169 @@ const DashboardPage = {
                     <span style="font-weight: 600; font-size: var(--font-h2);">你的分享说明</span>
                     <span></span>
                 </div>
-                <p style="font-size:14px;color:var(--text-secondary);margin: 12px 0;">根据你的选择生成的草稿，可以修改后再分享。</p>
-                <div class="share-draft-box ${this.getDraftColorClass()}">${draft}</div>
-                <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
-                    <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.copyDraft()">📋 复制文字</button>
-                    <button class="btn btn-secondary" style="flex:1" onclick="App.showToast('图片生成功能开发中')">🖼️ 生成图片</button>
+                <div class="share-steps">
+                    <span class="share-step done">✓</span><span class="share-step-line done"></span>
+                    <span class="share-step done">✓</span><span class="share-step-line done"></span>
+                    <span class="share-step done">✓</span><span class="share-step-line done"></span>
+                    <span class="share-step active">4</span>
                 </div>
+                <p style="font-size:14px;color:var(--text-secondary);margin: 12px 0;">根据你的选择生成的草稿，可以修改后再分享。</p>
+                <div class="share-draft-box ${colorClass}">
+                    <div class="share-draft-label">致 ${this.state.shareTarget}</div>
+                    ${draft}
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;">
+                    <button class="btn btn-primary" style="flex:1;min-height:56px;" onclick="DashboardPage.copyDraft()">📋 复制文字</button>
+                    <button class="btn btn-accent" style="flex:1;min-height:56px;" onclick="DashboardPage.generateShareImage()">🖼️ 生成图片</button>
+                </div>
+                <div id="share-image-result" style="margin-top:16px;"></div>
                 <button class="btn btn-ghost" style="width:100%;margin-top:10px;" onclick="DashboardPage.render()">保存草稿，稍后再看</button>
             </div>
         `;
+    },
+
+    generateShareImage() {
+        const text = this.generateDraft().replace(/<br>/g, '\n').replace(/<[^>]*>/g, '');
+        const wallpapers = [
+            'assets/Camera_XHS_1782474634237_1782474717622edit.jpg',
+            'assets/Camera_XHS_1782474638231_1782474732339edit.jpg',
+            'assets/Camera_XHS_1782474656705_1782474750586edit.jpg',
+            'assets/Camera_XHS_1782474664427_1782474768007edit.jpg'
+        ];
+        const bg = wallpapers[Math.floor(Math.random() * wallpapers.length)];
+
+        const btn = document.querySelector('.btn-accent');
+        if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 750;
+        canvas.height = 1334;
+        const ctx = canvas.getContext('2d');
+
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+            const sw = img.width * scale;
+            const sh = img.height * scale;
+            ctx.drawImage(img, (canvas.width - sw) / 2, (canvas.height - sh) / 2, sw, sh);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#333333';
+            ctx.font = 'bold 42px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('炙热的你', canvas.width / 2, 110);
+
+            ctx.strokeStyle = '#A3C9A8';
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2 - 70, 140);
+            ctx.lineTo(canvas.width / 2 + 70, 140);
+            ctx.stroke();
+
+            ctx.fillStyle = '#333333';
+            ctx.font = '24px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'left';
+            const lines = this.wrapText(ctx, text, canvas.width - 100);
+            let y = 190;
+            lines.forEach(line => {
+                if (y < canvas.height - 200) {
+                    ctx.fillText(line, 50, y);
+                    y += line === '' ? 16 : 40;
+                }
+            });
+
+            ctx.fillStyle = '#999999';
+            ctx.font = '18px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('来自「炙热的你」App', canvas.width / 2, canvas.height - 80);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            if (btn) { btn.disabled = false; btn.textContent = '🖼️ 生成图片'; }
+            this.showImagePreview(dataUrl);
+        };
+        img.onerror = () => {
+            if (btn) { btn.disabled = false; btn.textContent = '🖼️ 生成图片'; }
+            App.showToast('图片生成失败，请重试');
+        };
+        img.src = bg;
+    },
+
+    wrapText(ctx, text, maxWidth) {
+        const lines = [];
+        const paragraphs = text.split('\n');
+        paragraphs.forEach(para => {
+            if (para.trim() === '') { lines.push(''); return; }
+            let line = '';
+            for (let i = 0; i < para.length; i++) {
+                const testLine = line + para[i];
+                if (ctx.measureText(testLine).width > maxWidth && line.length > 0) {
+                    lines.push(line);
+                    line = para[i];
+                } else {
+                    line = testLine;
+                }
+            }
+            if (line) lines.push(line);
+        });
+        return lines;
+    },
+
+    showImagePreview(dataUrl) {
+        this.closeImagePreview();
+        const overlay = document.createElement('div');
+        overlay.className = 'image-preview-overlay';
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) DashboardPage.closeImagePreview();
+        });
+        overlay.innerHTML = `
+            <div class="image-preview-card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <h3 style="font-size:20px;margin:0;">图片已生成</h3>
+                    <button onclick="DashboardPage.closeImagePreview()" style="font-size:24px;background:none;border:none;cursor:pointer;width:44px;height:44px;padding:0;line-height:44px;color:var(--text-secondary);">✕</button>
+                </div>
+                <img src="${dataUrl}" style="width:100%;border-radius:12px;display:block;" alt="分享图片" />
+                <p style="font-size:14px;color:var(--text-secondary);margin:12px 0;text-align:center;">长按图片或点击下方按钮保存至相册</p>
+                <button class="btn btn-primary" style="width:100%;min-height:56px;font-size:18px;" onclick="DashboardPage.downloadImage()">💾 保存图片</button>
+            </div>
+        `;
+        document.body.appendChild(overlay);
+        requestAnimationFrame(() => overlay.classList.add('show'));
+    },
+
+    closeImagePreview() {
+        const overlay = document.querySelector('.image-preview-overlay');
+        if (overlay) {
+            overlay.classList.remove('show');
+            setTimeout(() => { if (overlay.parentNode) overlay.remove(); }, 300);
+        }
+    },
+
+    downloadImage() {
+        const img = document.querySelector('.image-preview-card img');
+        if (!img) return;
+        const link = document.createElement('a');
+        link.download = '炙热的你_分享_' + new Date().toISOString().slice(0, 10) + '.jpg';
+        link.href = img.src;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        App.showToast('图片已保存');
     },
 
     generateDraft() {
         const target = this.state.shareTarget;
         const content = this.state.shareContent;
         const tone = this.state.shareTone;
-        if (typeof shareTemplates !== 'undefined') {
-            const toneKey = { '温和说明': 'gentle', '认真沟通': 'serious', '简短提醒': 'brief', '轻松一点': 'casual' }[tone] || 'gentle';
-            const targetKey = { '伴侣': 'partner', '子女': 'child', '朋友/姐妹': 'friend', '医生': 'doctor' }[target] || 'partner';
-            const fn = shareTemplates[targetKey] && shareTemplates[targetKey][toneKey];
-            if (fn) return fn(content);
-        }
+        const templates = MockData.shareTemplates;
+        const toneKey = { '温和说明': 'gentle', '认真沟通': 'serious', '简短提醒': 'brief', '轻松一点': 'casual' }[tone] || 'gentle';
+        const targetKey = { '伴侣': 'partner', '子女': 'child', '朋友/姐妹': 'friend', '医生': 'doctor' }[target] || 'partner';
+        const symptoms = content.length > 0 ? content.join('、') : '身体不适';
+        const fn = templates[targetKey] && templates[targetKey][toneKey];
+        if (fn) return fn(symptoms, '16').replace(/\n/g, '<br>');
         let text = '';
         if (target === '伴侣') text = '亲爱的，最近我的身体有些变化，想跟你聊聊。';
         else if (target === '子女') text = '孩子，妈妈最近身体有些变化，想让你了解一下。';
