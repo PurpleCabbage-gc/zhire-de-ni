@@ -1,7 +1,10 @@
 const KnowPage = {
     state: {
         view: 'home',
+        step: 'basicInfo',
         currentQuestion: 0,
+        ageRange: null,
+        menstrualStatus: null,
         answers: [],
         chatMessages: []
     },
@@ -25,7 +28,7 @@ const KnowPage = {
 
                 <div class="card card-brand assessment-entry" onclick="KnowPage.startAssessment()">
                     <h2>3分钟，了解近期状态</h2>
-                    <p>15道小题，帮你梳理身体信号</p>
+                    <p>Kupperman国际标准量表 · 13项症状科学评估</p>
                     <button class="btn" style="background: rgba(255,255,255,0.95); color: var(--brand); margin-top: 14px; min-height: 44px; padding: 10px 20px; font-weight: 600; border-radius: 12px;">开始测评</button>
                 </div>
 
@@ -39,7 +42,7 @@ const KnowPage = {
                     <span>📋 历史测试结果</span>
                     <span class="ai-entry-arrow">›</span>
                 </div>
-                <p class="retest-hint">日常自测建议间隔至少3个月；已有症状者建议间隔2个月；绝经后期（停经满一年）建议6-12个月测一次。</p>
+                <p class="retest-hint">${MockData.kuppermanIntro.retestNote}</p>
 
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 28px;">
                     <h3 style="font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">我的安心卡</h3>
@@ -82,13 +85,93 @@ const KnowPage = {
     startAssessment() {
         this.state.currentQuestion = 0;
         this.state.answers = [];
+        this.state.step = 'intro';
         this.state.view = 'assessment';
+        this.renderIntro();
+    },
+
+    renderIntro() {
+        const container = document.getElementById('page-container');
+        const info = MockData.kuppermanIntro;
+        container.innerHTML = `
+            <div class="page assessment-page">
+                <div class="assessment-header">
+                    <button class="btn-back" onclick="KnowPage.renderHome()">← 返回</button>
+                    <span style="font-weight: 600; font-size: var(--font-h2);">${info.title}</span>
+                    <span></span>
+                </div>
+                <div class="card" style="margin-top: 16px; padding: 20px;">
+                    <p style="font-size: var(--font-body); line-height: 1.8; color: var(--text); margin-bottom: 16px;">${info.description}</p>
+                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 6px;">${info.applicable}</p>
+                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 6px;">${info.privacy}</p>
+                    <div style="padding: 12px; background: var(--yellow-soft); border-radius: 10px; margin-top: 12px;">
+                        <p style="font-size: var(--font-caption); color: var(--text); line-height: 1.6;">${info.disclaimer}</p>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" onclick="KnowPage.renderBasicInfo()">
+                    开始测试（共13题）
+                </button>
+            </div>
+        `;
+    },
+
+    renderBasicInfo() {
+        this.state.step = 'basicInfo';
+        const container = document.getElementById('page-container');
+        container.innerHTML = `
+            <div class="page assessment-page">
+                <div class="assessment-header">
+                    <button class="btn-back" onclick="KnowPage.renderIntro()">← 返回</button>
+                    <span class="assessment-progress-text">基本信息</span>
+                </div>
+                <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 4px;">第一部分（非评分项）</p>
+
+                <div class="card" style="margin-top: 12px; padding: 20px;">
+                    <h3 style="font-size: var(--font-body); font-weight: 600; margin-bottom: 12px;">您的年龄段：</h3>
+                    ${MockData.kuppermanAgeRanges.map(r => `
+                        <button class="option-btn basic-option ${this.state.ageRange === r.id ? 'selected' : ''}" style="display: block; width: 100%; text-align: left; margin-bottom: 8px;" onclick="KnowPage.selectAgeRange('${r.id}')">${r.label}</button>
+                    `).join('')}
+                </div>
+
+                <div class="card" style="margin-top: 12px; padding: 20px;">
+                    <h3 style="font-size: var(--font-body); font-weight: 600; margin-bottom: 12px;">月经状态：</h3>
+                    ${MockData.kuppermanMenstrualStatus.map(m => `
+                        <button class="option-btn basic-option ${this.state.menstrualStatus === m.id ? 'selected' : ''}" style="display: block; width: 100%; text-align: left; margin-bottom: 8px;" onclick="KnowPage.selectMenstrualStatus('${m.id}')">${m.label}</button>
+                    `).join('')}
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 24px;" id="btnStartQuestions" ${(!this.state.ageRange || !this.state.menstrualStatus) ? 'disabled' : ''} onclick="KnowPage.startQuestions()">
+                    确认，开始症状评分（第二部分）
+                </button>
+            </div>
+        `;
+    },
+
+    selectAgeRange(id) {
+        this.state.ageRange = id;
+        const ageLabels = {};
+        MockData.kuppermanAgeRanges.forEach(r => { ageLabels[r.id] = r.label; });
+        App.showToast('已选择：' + ageLabels[id]);
+        this.renderBasicInfo();
+    },
+
+    selectMenstrualStatus(id) {
+        this.state.menstrualStatus = id;
+        const mensLabels = {};
+        MockData.kuppermanMenstrualStatus.forEach(m => { mensLabels[m.id] = m.label; });
+        App.showToast('已选择：' + mensLabels[id]);
+        this.renderBasicInfo();
+    },
+
+    startQuestions() {
+        this.state.step = 'questions';
+        this.state.currentQuestion = 0;
         this.renderQuestion();
     },
 
     renderQuestion() {
-        const q = MockData.assessmentQuestions[this.state.currentQuestion];
-        const total = MockData.assessmentQuestions.length;
+        const q = MockData.kuppermanQuestions[this.state.currentQuestion];
+        const total = MockData.kuppermanQuestions.length;
         const progress = ((this.state.currentQuestion + 1) / total) * 100;
         const container = document.getElementById('page-container');
 
@@ -102,9 +185,10 @@ const KnowPage = {
                     <div class="progress-fill" style="width: ${progress}%"></div>
                 </div>
                 <div class="question-card">
+                    <span class="question-badge" style="display:inline-block; padding:4px 12px; border-radius:20px; font-size:13px; font-weight:600; background: var(--peach); color:#fff; margin-bottom:12px;">${q.symptom} (权重: ×${q.baseScore})</span>
                     <p class="question-text">${q.text}</p>
                     <div class="options-list">
-                        ${MockData.assessmentOptions.map(opt => `
+                        ${q.degrees.map(opt => `
                             <button class="option-btn" onclick="KnowPage.selectOption(${opt.value})">
                                 ${opt.label}
                             </button>
@@ -112,21 +196,21 @@ const KnowPage = {
                     </div>
                 </div>
                 <button class="btn btn-ghost" style="width: 100%; margin-top: 20px;" onclick="KnowPage.exitAssessment()">
-                    暂时不想测了，保存进度
+                    暂时不想测了，下次继续
                 </button>
             </div>
         `;
     },
 
     selectOption(value) {
-        const q = MockData.assessmentQuestions[this.state.currentQuestion];
-        this.state.answers.push({ questionId: q.id, category: q.category, value });
+        const q = MockData.kuppermanQuestions[this.state.currentQuestion];
+        this.state.answers.push({ questionId: q.id, value });
 
         const btns = document.querySelectorAll('.option-btn');
         btns[value].classList.add('selected');
 
         setTimeout(() => {
-            if (this.state.currentQuestion < MockData.assessmentQuestions.length - 1) {
+            if (this.state.currentQuestion < MockData.kuppermanQuestions.length - 1) {
                 this.state.currentQuestion++;
                 this.renderQuestion();
             } else {
@@ -136,44 +220,42 @@ const KnowPage = {
     },
 
     showResult() {
-        const answers = this.state.answers;
-        const categoryScores = {};
-        answers.forEach(a => {
-            if (!categoryScores[a.category]) categoryScores[a.category] = 0;
-            categoryScores[a.category] += a.value;
+        const result = MockData.calculateKuppermanScore(this.state.answers);
+        const basicInfo = { ageRange: this.state.ageRange, menstrualStatus: this.state.menstrualStatus };
+        const report = MockData.generateKuppermanReport(result, basicInfo);
+
+        const severityColors = {
+            normal: 'var(--brand)',
+            mild: '#F5D68A',
+            moderate: '#F4C2A1',
+            severe: '#E76F51'
+        };
+        const severityColor = severityColors[result.severity];
+
+        AppData.saveAssessment({
+            type: 'kupperman',
+            totalScore: result.totalScore,
+            severity: result.severity,
+            severityLabel: report.severityLabel,
+            answers: this.state.answers,
+            basicInfo: basicInfo
         });
-
-        const sorted = Object.entries(categoryScores).sort((a, b) => b[1] - a[1]);
-        const topConcerns = sorted.slice(0, 3).map(([cat]) => cat);
-        const totalScore = answers.reduce((sum, a) => sum + a.value, 0);
-        const maxScore = answers.length * 3;
-        const ratio = totalScore / maxScore;
-
-        let statusLabel;
-        if (ratio < 0.25) statusLabel = '状态不错，继续保持';
-        else if (ratio < 0.5) statusLabel = '有些信号值得留意';
-        else statusLabel = '需要多照顾自己';
-
-        AppData.saveAssessment({ answers, topConcerns, totalScore, statusLabel });
 
         const container = document.getElementById('page-container');
         container.innerHTML = `
             <div class="page result-page" style="animation: cardIn 400ms var(--ease-out)">
-                <div class="result-status">
-                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 6px;">今日状态</p>
-                    <p style="font-size: var(--font-h1); font-weight: 700; letter-spacing: -0.02em;">${statusLabel}</p>
+                <div class="result-status" style="background: ${severityColor}15; border-left: 4px solid ${severityColor}; padding: 20px; border-radius: 16px; margin-bottom: 20px;">
+                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-bottom: 6px;">Kupperman 改良评分结果</p>
+                    <div style="display: flex; align-items: baseline; gap: 8px;">
+                        <span style="font-size: 48px; font-weight: 700; letter-spacing: -0.02em; color: ${severityColor};">${result.totalScore}</span>
+                        <span style="font-size: var(--font-caption); color: var(--text-secondary);">/ 63 分</span>
+                    </div>
+                    <p style="font-size: var(--font-h2); font-weight: 700; margin-top: 4px;">${report.severityLabel}</p>
+                    <p style="font-size: var(--font-caption); color: var(--text-secondary); margin-top: 4px;">总分范围0-63分 | 轻度15-20分 | 中度20-35分 | 重度>35分</p>
                 </div>
 
-                <h3 style="margin-bottom: 10px; font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">近期主要关注点</h3>
-                <div class="concern-tags">
-                    ${topConcerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}
-                </div>
-
-                <h3 style="margin: 20px 0 10px; font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">今日可以尝试</h3>
-                <div class="suggestions-list">
-                    <div class="suggestion-item">今天可以试试睡前做5分钟腹式呼吸</div>
-                    <div class="suggestion-item">给自己倒一杯温水，慢慢喝完</div>
-                    <div class="suggestion-item">下午找个时间散步10分钟</div>
+                <div class="card" style="padding: 20px; margin-bottom: 16px;">
+                    ${report.reportHtml}
                 </div>
 
                 <div class="medical-reminder">
@@ -271,7 +353,7 @@ const KnowPage = {
                     <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
                         <p style="font-size: 48px; margin-bottom: 16px;">📋</p>
                         <p>还没有测评记录</p>
-                        <p style="margin-top: 8px; font-size: var(--font-caption);">完成一次测评后，结果会显示在这里</p>
+                        <p style="margin-top: 8px; font-size: var(--font-caption);">完成一次 Kupperman 测评后，结果会显示在这里</p>
                     </div>
                 </div>
             `;
@@ -285,19 +367,24 @@ const KnowPage = {
                     <span style="font-weight: 600; font-size: var(--font-h2);">历史测试结果</span>
                     <span></span>
                 </div>
-                <p class="retest-hint" style="margin-top: 8px; margin-bottom: 16px;">日常自测建议间隔至少3个月；已有症状者建议间隔2个月；绝经后期（停经满一年）建议6-12个月测一次。</p>
+                <p class="retest-hint" style="margin-top: 8px; margin-bottom: 16px;">${MockData.kuppermanIntro.retestNote}</p>
                 <div class="history-list">
                     ${history.map(h => {
                         const date = new Date(h.date);
-                        const dateStr = `${date.getMonth() + 1}月${date.getDate()}日`;
+                        const dateStr = `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+                        const severityColors = { normal: '#A3C9A8', mild: '#F5D68A', moderate: '#F4C2A1', severe: '#E76F51' };
+                        const color = severityColors[h.severity] || 'var(--brand)';
                         return `
-                            <div class="card" style="margin-bottom: 12px;">
+                            <div class="card" style="margin-bottom: 12px; border-left: 4px solid ${color};">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-weight: 600;">${dateStr}</span>
-                                    <span style="font-size: 13px; color: var(--text-secondary);">${h.statusLabel}</span>
+                                    <div>
+                                        <span style="font-weight: 600;">${dateStr}</span>
+                                        <span style="font-size: 13px; color: var(--text-secondary); margin-left: 8px;">Kupperman 量表</span>
+                                    </div>
                                 </div>
-                                <div style="margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap;">
-                                    ${h.topConcerns.map(c => `<span class="concern-tag">${c}</span>`).join('')}
+                                <div style="margin-top: 8px; display: flex; align-items: center; gap: 12px;">
+                                    <span style="font-size: 28px; font-weight: 700; color: ${color};">${h.totalScore}</span>
+                                    <span style="font-size: 13px; color: var(--text-secondary);">/ 63分 · ${h.severityLabel}</span>
                                 </div>
                             </div>
                         `;

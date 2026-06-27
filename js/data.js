@@ -81,30 +81,276 @@ const AppData = {
 };
 
 const MockData = {
-    assessmentQuestions: [
-        { id: 1, text: '最近是否经历过潮热或突然发热的感觉？', category: '潮热' },
-        { id: 2, text: '夜间是否有盗汗影响睡眠的情况？', category: '盗汗' },
-        { id: 3, text: '是否感觉入睡困难或容易早醒？', category: '睡眠' },
-        { id: 4, text: '是否经常感到情绪波动或容易烦躁？', category: '情绪' },
-        { id: 5, text: '是否感觉记忆力或注意力有所下降？', category: '记忆' },
-        { id: 6, text: '是否经常感到疲劳或精力不足？', category: '疲劳' },
-        { id: 7, text: '是否有关节或肌肉酸痛不适？', category: '关节' },
-        { id: 8, text: '是否感觉皮肤变得干燥或敏感？', category: '皮肤' },
-        { id: 9, text: '是否有心悸或心跳加速的感觉？', category: '心悸' },
-        { id: 10, text: '是否感觉情绪低落或对事物兴趣减少？', category: '情绪' },
-        { id: 11, text: '是否有头痛或头晕的情况？', category: '头痛' },
-        { id: 12, text: '月经周期是否出现明显变化？', category: '月经' },
-        { id: 13, text: '是否感觉体重有不明原因的变化？', category: '代谢' },
-        { id: 14, text: '是否有尿频或漏尿的情况？', category: '泌尿' },
-        { id: 15, text: '整体来说，这些变化是否影响了日常生活质量？', category: '综合' }
+    kuppermanIntro: {
+        title: 'Kupperman 更年期症状评估',
+        description: 'Kupperman改良评分是国际通用的更年期症状评估工具，它将更年期女性模糊的"难受"转化为可量化数据，有助于个人追踪症状变化，也为就医时与医生沟通提供客观参考。建议您按最近一个月的真实感受完成自测。',
+        applicable: '适用人群：40-65岁女性，或出现月经不规律、疑似围绝经期症状者',
+        privacy: '隐私保护：测试结果仅用于自我评估，提交后不关联个人信息',
+        disclaimer: '本测试不能替代专业医疗诊断，但可作为有效沟通工具，便于医生快速了解您当下的状态。',
+        retestNote: '日常自测建议间隔至少3个月；已有症状者建议间隔2个月；绝经后期（停经满一年）建议6-12个月测一次。'
+    },
+
+    kuppermanAgeRanges: [
+        { id: 'age_1', label: '45岁及以下（包括45岁）' },
+        { id: 'age_2', label: '46-50' },
+        { id: 'age_3', label: '51-55' },
+        { id: 'age_4', label: '56-60' },
+        { id: 'age_5', label: '61-65' },
+        { id: 'age_6', label: '65岁以上（不包括65岁）' }
     ],
 
-    assessmentOptions: [
-        { label: '完全没有', value: 0 },
-        { label: '轻微', value: 1 },
-        { label: '中度', value: 2 },
-        { label: '比较明显', value: 3 }
+    kuppermanMenstrualStatus: [
+        { id: 'mens_1', label: '规律月经' },
+        { id: 'mens_2', label: '月经不规律' },
+        { id: 'mens_3', label: '停经（<12个月）' },
+        { id: 'mens_4', label: '停经（≥12个月）' }
     ],
+
+    kuppermanQuestions: [
+        {
+            id: 1,
+            symptom: '潮热出汗',
+            baseScore: 4,
+            text: '近一个月内，您是否出现突然发热、面部或全身潮红并伴随出汗的情况？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔（<3次/天）' },
+                { value: 2, label: '较频繁（3-9次/天）' },
+                { value: 3, label: '非常频繁（≥10次/天）' }
+            ]
+        },
+        {
+            id: 2,
+            symptom: '感觉障碍',
+            baseScore: 2,
+            text: '近一个月内，您是否有异常的身体感觉（如冷、热、疼痛、麻木或感觉丧失）？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔（与天气变化有关）' },
+                { value: 2, label: '较频繁（经常出现，但不影响生活）' },
+                { value: 3, label: '非常频繁（持续存在，严重影响日常生活）' }
+            ]
+        },
+        {
+            id: 3,
+            symptom: '失眠',
+            baseScore: 2,
+            text: '近一个月内，您的睡眠质量如何？是否难以入睡或易醒？',
+            degrees: [
+                { value: 0, label: '无失眠，睡眠正常' },
+                { value: 1, label: '偶尔失眠' },
+                { value: 2, label: '经常失眠，需服安眠药才能缓解' },
+                { value: 3, label: '严重失眠，影响工作和生活' }
+            ]
+        },
+        {
+            id: 4,
+            symptom: '易激动',
+            baseScore: 2,
+            text: '近一个月内，您是否比以往更容易情绪激动或发脾气？',
+            degrees: [
+                { value: 0, label: '无，情绪稳定' },
+                { value: 1, label: '偶尔激动' },
+                { value: 2, label: '经常激动，但能自我控制' },
+                { value: 3, label: '频繁激动，完全无法克制' }
+            ]
+        },
+        {
+            id: 5,
+            symptom: '抑郁、疑心',
+            baseScore: 1,
+            text: '近一个月内，您是否感到情绪低落、沮丧或对他人产生不必要的怀疑？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔出现，能自我调节' },
+                { value: 2, label: '经常出现，需自我控制' },
+                { value: 3, label: '持续存在，甚至失去生活信心' }
+            ]
+        },
+        {
+            id: 6,
+            symptom: '眩晕',
+            baseScore: 1,
+            text: '近一个月内，您是否有头晕或站立不稳的感觉？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔头晕' },
+                { value: 2, label: '经常头晕，但不影响日常活动' },
+                { value: 3, label: '频繁头晕，妨碍正常生活' }
+            ]
+        },
+        {
+            id: 7,
+            symptom: '疲乏',
+            baseScore: 1,
+            text: '近一个月内，您是否感到异常疲劳或体力下降？',
+            degrees: [
+                { value: 0, label: '无，精力正常' },
+                { value: 1, label: '偶尔疲劳（长时间工作后感到累，但休息后能恢复）' },
+                { value: 2, label: '经常疲劳（如爬四楼需要中途休息，或完成后明显气喘）' },
+                { value: 3, label: '持续疲劳，日常活动受限（轻微活动如散步、站立即感到极度疲劳）' }
+            ]
+        },
+        {
+            id: 8,
+            symptom: '骨关节痛',
+            baseScore: 1,
+            text: '近一个月内，您是否有骨关节疼痛或僵硬的情况？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔疼痛' },
+                { value: 2, label: '经常疼痛，但关节功能正常' },
+                { value: 3, label: '持续疼痛，关节活动受限' }
+            ]
+        },
+        {
+            id: 9,
+            symptom: '头痛',
+            baseScore: 1,
+            text: '近一个月内，您是否有头痛的情况？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔头痛，可忍受' },
+                { value: 2, label: '经常头痛' },
+                { value: 3, label: '严重头痛，需服药缓解' }
+            ]
+        },
+        {
+            id: 10,
+            symptom: '心悸',
+            baseScore: 1,
+            text: '近一个月内，您是否有心跳加快、心慌或心脏不适感？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔心悸' },
+                { value: 2, label: '经常心悸，但不影响生活' },
+                { value: 3, label: '频繁心悸，需就医治疗' }
+            ]
+        },
+        {
+            id: 11,
+            symptom: '皮肤蚁走感',
+            baseScore: 1,
+            text: '近一个月内，您是否有皮肤蚂蚁爬行般的异常感受？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔出现' },
+                { value: 2, label: '经常出现，但可忍受' },
+                { value: 3, label: '持续存在，需治疗' }
+            ]
+        },
+        {
+            id: 12,
+            symptom: '性生活',
+            baseScore: 1,
+            text: '近一个月内，您的性欲或性生活体验是否有变化？',
+            degrees: [
+                { value: 0, label: '正常，无不适' },
+                { value: 1, label: '性欲下降' },
+                { value: 2, label: '性交疼痛' },
+                { value: 3, label: '性欲丧失' }
+            ]
+        },
+        {
+            id: 13,
+            symptom: '泌尿系感染',
+            baseScore: 1,
+            text: '近一年内，您是否有尿频、尿急或排尿疼痛等泌尿系统感染症状？',
+            degrees: [
+                { value: 0, label: '无' },
+                { value: 1, label: '偶尔感染，可自愈（<3次/年）' },
+                { value: 2, label: '较频繁（>3次/年）' },
+                { value: 3, label: '非常频繁（>1次/月），需服药' }
+            ]
+        }
+    ],
+
+    calculateKuppermanScore(answers) {
+        let totalScore = 0;
+        const itemScores = [];
+        answers.forEach(a => {
+            const q = this.kuppermanQuestions.find(q => q.id === a.questionId);
+            if (q) {
+                const score = q.baseScore * a.value;
+                totalScore += score;
+                itemScores.push({
+                    symptom: q.symptom,
+                    baseScore: q.baseScore,
+                    degree: a.value,
+                    degreeLabel: q.degrees[a.value].label,
+                    score: score
+                });
+            }
+        });
+        let severity;
+        if (totalScore <= 14) severity = 'normal';
+        else if (totalScore <= 20) severity = 'mild';
+        else if (totalScore <= 35) severity = 'moderate';
+        else severity = 'severe';
+        return { totalScore, itemScores, severity };
+    },
+
+    generateKuppermanReport(result, basicInfo) {
+        const { totalScore, itemScores, severity } = result;
+        const severityLabels = {
+            normal: '正常范围',
+            mild: '轻度更年期症状表现',
+            moderate: '中度更年期症状表现',
+            severe: '重度更年期症状表现'
+        };
+        const severityLabel = severityLabels[severity];
+
+        const highScoreItems = itemScores.filter(i => i.score >= 4);
+        const occasionalItems = itemScores.filter(i => i.degree === 1);
+
+        let reportHtml = '';
+        reportHtml += `<p style="font-size: var(--font-body); line-height: 1.8; margin-bottom: 16px;">您的 <strong>Kupperman 评分结果为 ${totalScore} 分</strong>，属于<strong>${severityLabel}</strong>。以下是重点分析：</p>`;
+
+        if (highScoreItems.length > 0) {
+            reportHtml += `<h3 style="font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">主要症状表现（4分以上的项目）：</h3>`;
+            highScoreItems.forEach((item, idx) => {
+                reportHtml += `<p style="font-size: var(--font-body); margin-bottom: 4px; padding-left: 12px;">${idx + 1}. ${item.symptom}（得分：${item.score}分，${item.degreeLabel}）</p>`;
+            });
+            reportHtml += `<br>`;
+        }
+
+        if (occasionalItems.length > 0) {
+            reportHtml += `<h3 style="font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">值得关注的细节：</h3>`;
+            const names = occasionalItems.map(i => i.symptom).join('、');
+            reportHtml += `<p style="font-size: var(--font-body); line-height: 1.8; padding-left: 12px;">您有 ${occasionalItems.length} 个项目选择了"偶尔出现"的症状，包括${names}。这些症状虽未达高频程度，但集体出现可能相互影响。</p>`;
+            reportHtml += `<br>`;
+        }
+
+        reportHtml += `<h3 style="font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary); margin-bottom: 8px;">专业建议：</h3>`;
+        reportHtml += `<div style="padding-left: 8px;">`;
+        reportHtml += `<p style="font-size: var(--font-body); font-weight: 600; margin-bottom: 4px;">1. 医疗干预方面</p>`;
+        reportHtml += `<p style="font-size: var(--font-body); line-height: 1.8; margin-bottom: 12px; padding-left: 8px;">建议妇科或更年期门诊就诊评估。情绪管理可能需要专业指导，激素治疗需由医生评估后决定。</p>`;
+        reportHtml += `<p style="font-size: var(--font-body); font-weight: 600; margin-bottom: 4px;">2. 自我管理要点</p>`;
+        reportHtml += `<p style="font-size: var(--font-body); line-height: 1.8; padding-left: 8px;">`;
+        reportHtml += `(a) 建立情绪日记，记录波动规律<br>`;
+        reportHtml += `(b) 尝试正念呼吸练习，缓解情绪症状<br>`;
+        reportHtml += `(c) 保持规律作息，预防失眠加重<br>`;
+        reportHtml += `(d) 适当补充钙质和维生素D<br>`;
+        reportHtml += `</p>`;
+        reportHtml += `<p style="font-size: var(--font-body); font-weight: 600; margin-bottom: 4px; margin-top: 12px;">3. 监测重点</p>`;
+        reportHtml += `<p style="font-size: var(--font-body); line-height: 1.8; padding-left: 8px;">`;
+        reportHtml += `(a) 观察情绪失控发作频率是否增加<br>`;
+        reportHtml += `(b) 留意其他偶尔症状是否转为频繁<br>`;
+        reportHtml += `(c) 每三个月复测量表，进行动态评估<br>`;
+        reportHtml += `</p>`;
+        reportHtml += `</div>`;
+        reportHtml += `<br>`;
+        reportHtml += `<p style="font-size: var(--font-caption); color: var(--text-secondary); line-height: 1.6; padding: 12px; background: var(--yellow-soft); border-radius: 10px;">请注意，这些症状都是更年期常见表现，通过规范管理和适当调整，多数症状可以得到有效控制。如果出现情绪持续低落或失眠加重等情况，请及时就诊。</p>`;
+
+        return {
+            totalScore,
+            severity,
+            severityLabel,
+            highScoreItems,
+            occasionalItems,
+            reportHtml
+        };
+    },
 
     symptomQuestions: [
         { id: 1, text: '👋 您在夜里睡觉时，有没有因为身上突然燥热或大量出汗而热醒，需要掀被子或者换衣服？', icon: '🌡️', field: 'hotFlash' },

@@ -704,6 +704,25 @@ body {
 }
 .detail-severity { font-weight: 600; }
 
+/* === Kupperman Assessment === */
+.question-badge {
+    display: inline-block; padding: 4px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 600; background: var(--peach); color: #fff; margin-bottom: 12px;
+}
+.basic-option {
+    display: block; width: 100%; text-align: left; margin-bottom: 8px;
+    padding: 14px 18px; border: 2px solid var(--border); border-radius: var(--radius-sm);
+    background: var(--white); font-size: var(--font-body); font-family: inherit;
+    cursor: pointer; transition: all 150ms; color: var(--text);
+}
+.basic-option.selected {
+    border-color: var(--brand); background: #f0f7f1; color: var(--brand-deep); font-weight: 600;
+}
+.basic-option:hover { border-color: var(--brand); }
+.btn:disabled {
+    opacity: 0.4; cursor: not-allowed; pointer-events: none;
+}
+
 /* === Responsive === */
 @media (min-width: 431px) {
     body { background: #ebe7e0; }
