@@ -3,6 +3,7 @@ const DashboardPage = {
         view: 'week',
         selectedDay: null,
         statsOpen: false,
+        selectedLineSymptom: 0,
         shareStep: 'target',
         shareTarget: '',
         shareContent: [],
@@ -11,6 +12,7 @@ const DashboardPage = {
 
     render() {
         this.state.view = 'week';
+        this.state.selectedLineSymptom = 0;
         this.renderMain();
     },
 
@@ -212,7 +214,12 @@ const DashboardPage = {
                         <div class="stat-card"><div class="stat-label">本月有 ${journalDays} 天我做了勇敢尝试</div><div class="stat-number">${journalDays}</div></div>
                     </div>
                     <canvas id="chartPie" width="300" height="200" style="margin-top:12px;"></canvas>
-                    <canvas id="chartLine" width="300" height="180" style="margin-top:12px;"></canvas>
+                    <div class="line-symptom-selector">
+                        ${['潮热','睡眠','情绪','疲劳','疼痛','记忆','性欲','尿频'].map((s, i) =>
+                            '<button class="line-symptom-chip ' + (this.state.selectedLineSymptom === i ? 'active' : '') + '" onclick="DashboardPage.selectLineSymptom(' + i + ')">' + s + '</button>'
+                        ).join('')}
+                    </div>
+                    <canvas id="chartLine" width="300" height="180" style="margin-top:8px;"></canvas>
                 </div>
             </div>
         `;
@@ -271,36 +278,64 @@ const DashboardPage = {
 
         const lineEl = document.getElementById('chartLine');
         if (lineEl) {
+            const si = this.state.selectedLineSymptom || 0;
+            const lineColor = ['#E76F51','#7B68EE','#F5D68A','#A3C9A8','#F4C2A1','#6BA3BE','#DDA0DD','#87CEEB'];
             const dates = Object.keys(trendData).sort();
+
+            let lineLabels, lineData;
             if (dates.length === 0) {
-                const mlabels = [];
-                const mdata = [];
-                for (let i = 0; i < 14; i++) {
-                    const d = new Date(year, month, i + 1);
-                    mlabels.push((d.getMonth() + 1) + '/' + d.getDate());
-                    mdata.push(Math.floor(Math.random() * 4) + 1);
+                // Build mock data: one point per day for the current month so far
+                lineLabels = [];
+                lineData = [];
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const pastDays = Math.min(daysInMonth, now.getDate());
+                for (let d = 1; d <= pastDays; d++) {
+                    lineLabels.push((month + 1) + '/' + d);
+                    lineData.push(Math.floor(Math.random() * 4) + 1);
                 }
-                new Chart(lineEl, {
-                    type: 'line',
-                    data: {
-                        labels: mlabels,
-                        datasets: [{ label: '潮热 严重程度', data: mdata, borderColor: '#E76F51', backgroundColor: 'rgba(231,111,81,0.1)', fill: true, tension: 0.3 }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }, plugins: { legend: { position: 'bottom' } } }
-                });
             } else {
-                const topSymptom = counts.indexOf(Math.max(...counts));
-                const lineData = dates.map(dk => trendData[dk][topSymptom] || 0);
-                new Chart(lineEl, {
-                    type: 'line',
-                    data: {
-                        labels: dates.map(dk => dk.slice(5)),
-                        datasets: [{ label: labels[topSymptom] + ' 严重程度', data: lineData, borderColor: '#E76F51', backgroundColor: 'rgba(231,111,81,0.1)', fill: true, tension: 0.3 }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: true, scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }, plugins: { legend: { display: true, position: 'bottom' } } }
-                });
+                lineLabels = dates.map(dk => dk.slice(5));
+                lineData = dates.map(dk => trendData[dk][si] || 0);
             }
+
+            new Chart(lineEl, {
+                type: 'line',
+                data: {
+                    labels: lineLabels,
+                    datasets: [{
+                        label: labels[si] + ' 严重程度',
+                        data: lineData,
+                        borderColor: lineColor[si],
+                        backgroundColor: lineColor[si].replace(')', ',0.12)').replace('rgb', 'rgba'),
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 3,
+                        pointBackgroundColor: lineColor[si]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 10, font: { size: 10 } } },
+                        y: { min: 0, max: 4, ticks: { stepSize: 1 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
         }
+    },
+
+    selectLineSymptom(index) {
+        this.state.selectedLineSymptom = index;
+        // Destroy old chart instance
+        const oldChart = Chart.getChart('chartLine');
+        if (oldChart) oldChart.destroy();
+        // Toggle chip active
+        document.querySelectorAll('.line-symptom-chip').forEach((c, i) => c.classList.toggle('active', i === index));
+        this.initCharts();
     },
 
     renderReportSection() {
@@ -530,58 +565,75 @@ const DashboardPage = {
         if (btn) { btn.disabled = true; btn.textContent = '生成中...'; }
 
         const canvas = document.createElement('canvas');
-        canvas.width = 750;
-        canvas.height = 1334;
+        canvas.width = 400;
+        canvas.height = 711;
         const ctx = canvas.getContext('2d');
 
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
-            const sw = img.width * scale;
-            const sh = img.height * scale;
-            ctx.drawImage(img, (canvas.width - sw) / 2, (canvas.height - sh) / 2, sw, sh);
+        let done = false;
+        const finish = (withWallpaper) => {
+            if (done) return;
+            done = true;
+
+            if (!withWallpaper) {
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, '#FDF0E7');
+                grad.addColorStop(1, '#F3F0FA');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
 
             ctx.fillStyle = 'rgba(255,255,255,0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             ctx.fillStyle = '#333333';
-            ctx.font = 'bold 42px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.font = 'bold 28px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('炙热的你', canvas.width / 2, 110);
+            ctx.fillText('炙热的你', canvas.width / 2, 70);
 
             ctx.strokeStyle = '#A3C9A8';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.moveTo(canvas.width / 2 - 70, 140);
-            ctx.lineTo(canvas.width / 2 + 70, 140);
+            ctx.moveTo(canvas.width / 2 - 50, 90);
+            ctx.lineTo(canvas.width / 2 + 50, 90);
             ctx.stroke();
 
             ctx.fillStyle = '#333333';
-            ctx.font = '24px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.font = '16px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'left';
-            const lines = this.wrapText(ctx, text, canvas.width - 100);
-            let y = 190;
+            const lines = this.wrapText(ctx, text, canvas.width - 60);
+            let y = 120;
             lines.forEach(line => {
-                if (y < canvas.height - 200) {
-                    ctx.fillText(line, 50, y);
-                    y += line === '' ? 16 : 40;
+                if (y < canvas.height - 120) {
+                    ctx.fillText(line, 30, y);
+                    y += line === '' ? 12 : 28;
                 }
             });
 
             ctx.fillStyle = '#999999';
-            ctx.font = '18px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+            ctx.font = '13px "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('来自「炙热的你」App', canvas.width / 2, canvas.height - 80);
+            ctx.fillText('来自「炙热的你」App', canvas.width / 2, canvas.height - 50);
 
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
             if (btn) { btn.disabled = false; btn.textContent = '🖼️ 生成图片'; }
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
             this.showImagePreview(dataUrl);
         };
+
+        const timeout = setTimeout(() => finish(false), 6000);
+
+        const img = new Image();
+        img.onload = () => {
+            clearTimeout(timeout);
+            const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+            const sw = img.width * scale;
+            const sh = img.height * scale;
+            ctx.drawImage(img, (canvas.width - sw) / 2, (canvas.height - sh) / 2, sw, sh);
+            finish(true);
+        };
         img.onerror = () => {
-            if (btn) { btn.disabled = false; btn.textContent = '🖼️ 生成图片'; }
-            App.showToast('图片生成失败，请重试');
+            clearTimeout(timeout);
+            finish(false);
         };
         img.src = bg;
     },

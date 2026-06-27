@@ -454,11 +454,6 @@ body {
     box-shadow: var(--shadow-card); text-align: center;
     animation: cardIn 400ms var(--ease-out);
 }
-.card-sticky {
-    background: #FDF0E7; border: none; position: relative; overflow: visible;
-    border-radius: 4px 4px var(--radius-md) var(--radius-md);
-    box-shadow: 1px 3px 10px rgba(0,0,0,0.06);
-}
 .sticky-tape {
     position: absolute; top: -8px; left: 50%; transform: translateX(-50%);
     width: 72px; height: 16px; background: rgba(227, 200, 160, 0.55);
@@ -690,6 +685,20 @@ body {
 .stats-body .dashboard-section-title { font-size: 15px; margin-bottom: 8px; }
 .stats-body .stat-row { margin-bottom: 0; }
 .stats-body .stat-card { padding: 14px 16px; }
+
+/* Line chart symptom selector */
+.line-symptom-selector {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px;
+}
+.line-symptom-chip {
+    padding: 6px 10px; border-radius: 14px; border: 1.5px solid var(--border);
+    background: var(--white); font-size: 12px; color: var(--text-secondary);
+    cursor: pointer; transition: all 150ms; white-space: nowrap;
+}
+.line-symptom-chip.active {
+    border-color: var(--brand); background: #f0f7f1; color: var(--brand-deep);
+    font-weight: 600;
+}
 
 .report-section {
     margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border);
@@ -1172,20 +1181,14 @@ body {
 }
 
 .card-sticky {
-    border-radius: 10px 10px 20px 20px;
     background:
         linear-gradient(180deg, rgba(255,255,255,0.28), transparent 40%),
         #FDF0E7;
+    border: none; position: relative; overflow: visible;
+    border-radius: 10px 10px 20px 20px;
     box-shadow: 4px 12px 26px rgba(127, 91, 68, 0.12);
-    transform: rotate(-0.7deg);
 }
 
-.sticky-tape {
-    height: 20px;
-    width: 88px;
-    background: rgba(240, 221, 186, 0.7);
-    backdrop-filter: blur(2px);
-}
 
 .severity-btn,
 .mood-btn,
