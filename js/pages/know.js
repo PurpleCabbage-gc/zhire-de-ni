@@ -36,13 +36,13 @@ const KnowPage = {
                 <div style="display:flex;gap:10px;margin-top:12px;">
                     <button class="btn btn-secondary" style="flex:1;" onclick="KnowPage.showHistory()">📋 历史测试结果</button>
                 </div>
+                <p class="retest-hint">${MockData.kuppermanIntro.retestNote}</p>
 
                 <div class="ai-entry" onclick="KnowPage.showChat()" style="margin-top:16px;">
                     <div class="ai-entry-icon">🔍</div>
                     <span>问问暖知</span>
                     <span class="ai-entry-arrow">›</span>
                 </div>
-                <p class="retest-hint">${MockData.kuppermanIntro.retestNote}</p>
 
                 <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 28px;">
                     <h3 style="font-size: var(--font-caption); font-weight: 600; color: var(--text-secondary);">我的安心卡</h3>
