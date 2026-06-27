@@ -25,22 +25,14 @@ const Nav = {
         { id: 'settings', label: '我的设置' }
     ],
 
-    tabColors: {
-        know: '#A3C9A8',
-        record: '#F4C2A1',
-        dashboard: '#6BA3BE',
-        settings: '#C4B5E3'
-    },
-
     render(activeTab) {
         const nav = document.getElementById('bottom-nav');
         nav.innerHTML = this.tabs.map(tab => {
             const isActive = tab.id === activeTab;
             const iconSet = this.icons[tab.id];
             const icon = isActive ? iconSet.active : iconSet.inactive;
-            const color = isActive ? this.tabColors[tab.id] : '';
             return `
-                <button class="nav-item ${isActive ? 'active' : ''}" data-tab="${tab.id}" ${color ? 'style="color:' + color + '"' : ''}>
+                <button class="nav-item ${isActive ? 'active' : ''}" data-tab="${tab.id}">
                     ${icon}
                     <span>${tab.label}</span>
                 </button>

@@ -87,7 +87,7 @@ body {
     cursor: pointer; transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out);
     text-decoration: none; line-height: 1.3; letter-spacing: -0.01em; user-select: none;
 }
-.btn:active { transform: translateY(2px); box-shadow: var(--shadow-active); }
+.btn:active { transform: translateY(-2px); box-shadow: var(--shadow-active); }
 
 .btn-primary { background: var(--brand); color: #fff; }
 .btn-primary:active { background: var(--brand-deep); }
@@ -153,7 +153,7 @@ body {
     color: var(--text-muted); font-size: 11px; font-weight: 500;
     transition: color 150ms; min-width: 60px; min-height: 56px;
 }
-.nav-item.active { color: inherit; }
+.nav-item.active { color: var(--brand); }
 .nav-item svg { width: 28px; height: 28px; }
 .nav-item.active svg { stroke-width: 2.5; }
 
@@ -174,14 +174,10 @@ body {
 .splash-bg img {
     width: 100%; height: 100%; object-fit: cover;
     animation: kenBurns 8s ease-in-out infinite alternate;
-    opacity: 0; transition: opacity 0.6s ease;
-}
-.splash-bg img.loaded {
-    opacity: 1;
 }
 .splash-bg::after {
     content: ''; position: absolute; inset: 0;
-    background: rgba(255,255,255,0.25); z-index: 1;
+    background: rgba(255,255,255,0.45); z-index: 1;
 }
 @keyframes kenBurns {
     from { transform: scale(1); }
@@ -193,8 +189,8 @@ body {
     margin-bottom: 12px; letter-spacing: 0.02em; position: relative; z-index: 2;
 }
 .splash-slogan {
-    font-size: var(--font-caption); color: var(--text-secondary);
-    margin-bottom: 48px; line-height: 1.6; position: relative; z-index: 2;
+    font-size: 26px; font-weight: 700; color: var(--text-primary);
+    margin-bottom: 48px; line-height: 1.4; position: relative; z-index: 2;
 }
 .splash-actions {
     width: 100%; display: flex; flex-direction: column; gap: 12px;
@@ -581,10 +577,6 @@ body {
     width: 36px; height: 36px; border-radius: 50%;
     box-shadow: var(--shadow-card); transition: all 200ms;
 }
-.petal-shape {
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(45deg);
-}
 .petal-item.selected .petal-dot {
     box-shadow: 0 0 0 3px var(--brand);
 }
@@ -698,6 +690,10 @@ body {
     font-size: var(--font-caption); line-height: 1.8; color: var(--text-primary);
     border: 1px solid var(--border);
 }
+.share-draft-partner { background: linear-gradient(135deg, var(--peach-light), #fff); border-color: var(--peach); }
+.share-draft-child { background: linear-gradient(135deg, #f0f7f1, #fff); border-color: var(--brand); }
+.share-draft-friend { background: linear-gradient(135deg, var(--lavender-light), #fff); border-color: var(--lavender); }
+.share-draft-doctor { background: linear-gradient(135deg, #f8f8f8, #fff); border-color: #ddd; }
 
 /* === Settings === */
 .settings-section { margin-bottom: 24px; }

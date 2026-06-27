@@ -18,7 +18,7 @@ const SplashPage = {
             <div class="splash-page">
                 <div class="splash-bg">
                     <div class="splash-placeholder"></div>
-                    <img src="${bg}" alt="" loading="lazy" onload="this.classList.add('loaded')">
+                    <img src="${bg}" alt="">
                 </div>
                 <h1 class="splash-brand">炙热的你</h1>
                 <p class="splash-slogan">炙热如你，心怀美好，向阳绽放！</p>

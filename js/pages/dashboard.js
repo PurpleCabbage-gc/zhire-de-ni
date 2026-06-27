@@ -53,7 +53,7 @@ const DashboardPage = {
                         if (ratio > 0.5) color = '#F4C2A1';
                         if (ratio > 0.75) color = '#e8a07a';
                         return '<div class="petal-item ' + (this.state.selectedDay === i ? 'selected' : '') + '" onclick="DashboardPage.showDayDetail(' + i + ')">' +
-                            '<div class="petal-dot petal-shape" style="background: ' + color + '"></div>' +
+                            '<div class="petal-dot" style="background: ' + color + '"></div>' +
                             '<span class="petal-label">周' + d.dayName + '</span></div>';
                     }).join('')}
                 </div>
@@ -375,7 +375,7 @@ const DashboardPage = {
                     <span></span>
                 </div>
                 <p style="font-size:14px;color:var(--text-secondary);margin: 12px 0;">根据你的选择生成的草稿，可以修改后再分享。</p>
-                <div class="share-draft-box">${draft}</div>
+                <div class="share-draft-box ${this.getDraftColorClass()}">${draft}</div>
                 <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;">
                     <button class="btn btn-primary" style="flex:1" onclick="DashboardPage.copyDraft()">📋 复制文字</button>
                     <button class="btn btn-secondary" style="flex:1" onclick="App.showToast('图片生成功能开发中')">🖼️ 生成图片</button>
@@ -404,6 +404,11 @@ const DashboardPage = {
         if (content.length > 0) text += '\n\n主要想聊聊：' + content.join('、') + '。';
         text += '\n\n这些都是更年期阶段正常的身体信号，有你的理解和支持，我会更好的。';
         return text.replace(/\n/g, '<br>');
+    },
+
+    getDraftColorClass() {
+        const map = { '伴侣': 'share-draft-partner', '子女': 'share-draft-child', '朋友/姐妹': 'share-draft-friend', '医生': 'share-draft-doctor' };
+        return map[this.state.shareTarget] || '';
     },
 
     copyDraft() {
